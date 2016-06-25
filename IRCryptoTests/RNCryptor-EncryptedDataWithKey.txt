@@ -1,0 +1,5 @@
+// Ciphertext encrypted using RNCryptor library
+// With static AES key FFFFFFFFF... (all 1s)
+// With static HMAC key FFFFFFFFF... (all 1s)
+// Should decrypt to: "My secret message encrypted with Key using RNCryptor library"
+0300c8e45a68a3a6b7238565f66caf211c6a57588f461de53d8f17b7b6bf162800d31c655020615674b6f7f3a5288937d8feb270b5e90e7ef849525d4777286b481471b3c8715d75ea1166e11e62d5658e35eae91b13e07c9aef884324a886ccd586b23398b263b8314e702274d6c0c4541f
