@@ -22,7 +22,7 @@ On any crypto course the first thing you **always** learn is: **DO NOT IMPLEMENT
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.7
+0.9
 
 ### Import
 - Clone the repo:
@@ -47,6 +47,123 @@ Create an instance of `IRCrypto` and configure it with options (read more about 
 }
 ```
 
+### Encrypting and Decrypting
+Encryption should provide confidentiality and integrity, this is why we need to use schemes like [Authenticated Encryption with Associated Data (AEAD)][Authenticated-Encryption]. IRCrypto uses the [Advance Encryption Standard][Advanced-Encryption-Standard] (AES) in [Cipher Block Chaining (CBC)][Cipher-Block-Chaining] mode of operation for confidentiality and [Hash-based Message Authentication Code (HMAC)][Hash-Based-Message-Authentication-Code] for integrity. IRCrypto uses the [RNCryptor File Format v3][RNCryptor-File-Format-v3] to package a header, the ciphertext and the MAC.
+
+#### AEAD Encryption
+If you use the default options you can simply call the `aeEncryptData:completion:failure:` method with your plaintext data. You **don't** need to save the *IV* as it is part of the RNCryptor Data Format:
+```Objc
+- (void)someAuthenticatedEncryptionMethod {
+    IRCrypto *crypto = ...
+    NSData *plaintext = ...
+    [crypto aeEncryptData:plaintext
+               completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+                  // encryptionSalt and hmacSalt will be nil
+                  // iv is returned but could be ignored
+                  // Do something cipherData
+               } 
+               failure:^(NSError *error) {
+                  // Handle error
+               }
+    ];
+}
+```
+You can also encrypt with your own keys using the `aeEncryptData:symmetricKey:hmacKey:completion:failure:` method (it is recommended to use 2 different keys, 1 for AES and 1 for HMAC). You **don't** need to save the *IV* as it is part of the RNCryptor Data Format:
+```Objc
+- (void)someAuthenticatedEncryptionMethod {
+    IRCrypto *crypto = ...
+    NSData *plaintext = ...
+    NSData *aesKey = ... // This should be a 256 bit random key
+    NSData *hmacKey = ... // This should be a 256 bit random key
+    [crypto aeEncryptData:plaintext
+             symmetricKey:aesKey
+                  hmacKey:hmacKey
+               completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+                  // encryptionSalt and hmacSalt will be nil
+                  // iv is returned but could be ignored
+                  // Do something cipherData
+               } 
+               failure:^(NSError *error) {
+                  // Handle error
+               }
+    ];
+}
+```
+If you don't want to generate random keys, you can use a simple text password with the `aeEncryptData:password:completion:failure:` method. You **don't** need to save the `encryptionSalt` nor the `hmacSalt` as they are part of the RNCryptor Data Format):
+```Objc
+- (void)someAuthenticatedEncryptionMethod {
+    IRCrypto *crypto = ...
+    NSData *plaintext = ...
+    NSString *password = ... // This can be a string of any length
+    [crypto aeEncryptData:plaintext
+                 password:password
+               completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+                  // iv, encryptionSalt and hmacSalt are returned but could be ignored
+                  // Do something with cipherData *and* encryptionSalt *and* hmacSalt
+               } 
+               failure:^(NSError *error) {
+                  // Handle error
+               }
+    ];
+}
+```
+#### AEAD Decryption
+Since IRCryptor uses the RNCryptor File Format, most of the information for decryption is available there, IRCryptor only needs the corresponding decryption keys. This alleviates the headache of saving IVs and Salts.
+
+If you use the default options you can simply call the `aeDecryptData:completion:failure:` method with your ciphertext:
+```Objc
+- (void)someAuthenticatedDecryptionMethod {
+    IRCrypto *crypto = ...
+    NSData *ciphertext = ...
+    [crypto aeDecryptData:ciphertext
+               completion:^(NSData *decryptedData) {
+                  // Do something with decryptedData
+               } 
+               failure:^(NSError *error) {
+                  // Handle error
+               }
+    ];
+}
+```
+Decrypting with your own keys using the `aeDecryptData:symmetricKey:hmacKey:completion:failure:` method:
+```Objc
+- (void)someAuthenticatedDecryptionMethod {
+    IRCrypto *crypto = ...
+    NSData *ciphertext = ...
+    NSData *aesKey = ... // This should be a 256 bit random key
+    NSData *hmacKey = ... // This should be a 256 bit random key
+    [crypto aeDecryptData:ciphertext
+             symmetricKey:aesKey
+                  hmacKey:hmacKey
+               completion:^(NSData *decryptedData) {
+                  // Do something with decryptedData
+               } 
+               failure:^(NSError *error) {
+                  // Handle error
+               }
+    ];
+}
+```
+
+And of course you can decrypt using a password with the `aeDecryptData:password:completion:failure:` method:
+```Objc
+- (void)someAuthenticatedDecryptionMethod {
+    IRCrypto *crypto = ...
+    NSData *ciphertext = ...
+    NSString *password = ... // This can be a string of any length
+    [crypto aeDecryptData:ciphertext
+                 password:password
+             completion:^(NSData *decryptedData) {
+                // Do something with decryptedData
+             } 
+             failure:^(NSError *error) {
+                // Handle error
+             }
+    ];
+}
+```
+
+IRCrypto also provides straightforward Encryption and Decryption methods using AES in CBC Mode. Note that these methods provide confidentiality but not integrity against active attacks. Also while using this methods you need to remember to save the correspongind IVs and Salts.
 #### Symmetric Encryption
 If you use the default options you can simply call the `encryptData:completion:failure:` method with your plaintext data (remember to save the returned IV for decryption):
 ```Objc
@@ -83,7 +200,7 @@ You can also encrypt with your own key using the `encryptData:withKey:completion
 }
 ```
 
-If you don't want to generate a random key, you can use a simple text password with the `encryptData:withPassword:completion:failure:` method (be aware of the fact that in this case you also need to save the `salt` for decryption):
+Same as with AEAD, if you don't want to generate a random key, you can use a simple text password with the `encryptData:withPassword:completion:failure:` method (be aware of the fact that in this case you also need to save the `salt` for decryption):
 ```Objc
 - (void)someEncryptionMethod {
 	IRCrypto *crypto = ...
@@ -140,7 +257,7 @@ Decrypting with your own key using the `decryptData:withKey:iv:completion:failur
 }
 ```
 
-And of course you can decrypt using a password with the `decryptData:withPassword:iv:salt:completion:failure:` method:
+Decrypting using a password with the `decryptData:withPassword:iv:salt:completion:failure:` method:
 ```Objc
 - (void)someDecryptionMethod {
 	IRCrypto *crypto = ...
@@ -148,7 +265,7 @@ And of course you can decrypt using a password with the `decryptData:withPasswor
 	NSString *password = ... // This can be a string of any length
 	NSData *iv = ... // The iv returned after encryption
 	NSData *salt = ... // The salt returned after encryption
-	[crypto decryptData:plaintext
+	[crypto decryptData:ciphertext
            withPassword:password
            			 iv:iv
            		   salt:salt
@@ -199,3 +316,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 [ec-type]: <http://opensource.apple.com/source/Security/Security-55471/sec/Security/SecECKey.c>
 [IRPublicConstants-header]: <https://github.com/ivRodriguezCA/IRCrypto/blob/master/IRCrypto/IRPublicConstants.h>
+[Authenticated-Encryption]: <https://en.wikipedia.org/wiki/Authenticated_encryption>
+[Advanced-Encryption-Standard]: <https://en.wikipedia.org/wiki/Advanced_Encryption_Standard>
+[Cipher-Block-Chaining]: <https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Block_Chaining_.28CBC.29>
+[Hash-Based-Message-Authentication-Code]: <https://en.wikipedia.org/wiki/Hash-based_message_authentication_code>
+[RNCryptor-File-Format-v3]: <https://github.com/RNCryptor/RNCryptor-Spec/blob/master/RNCryptor-Spec-v3.md>
