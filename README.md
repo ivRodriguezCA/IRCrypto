@@ -153,12 +153,12 @@ And of course you can decrypt using a password with the `aeDecryptData:password:
     NSString *password = ... // This can be a string of any length
     [crypto aeDecryptData:ciphertext
                  password:password
-             completion:^(NSData *decryptedData) {
-                // Do something with decryptedData
-             } 
-             failure:^(NSError *error) {
-                // Handle error
-             }
+               completion:^(NSData *decryptedData) {
+                  // Do something with decryptedData
+               } 
+               failure:^(NSError *error) {
+                  // Handle error
+               }
     ];
 }
 ```
