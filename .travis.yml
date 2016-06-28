@@ -1,7 +1,8 @@
 language: objective-c
+osx_image: xcode7.3
 script:
 - cd IRCrypto
-- xcodebuild -project IRCrypto.xcodeproj -scheme IRCrypto -sdk iphonesimulator9.3 build test
+- xcodebuild -project IRCrypto.xcodeproj -scheme IRCrypto -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 6,OS=9.3' build test
 
 
 
