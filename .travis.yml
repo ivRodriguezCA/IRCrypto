@@ -1,7 +1,4 @@
 language: objective-c
-before_script:
-- brew update
-- brew install xctool && brew cleanup xctool
 script:
 - cd IRCrypto
 - xcodebuild -project IRCrypto.xcodeproj -scheme IRCrypto -sdk iphonesimulator9.3 build test
