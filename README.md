@@ -1,8 +1,8 @@
+[![Build Status](https://travis-ci.org/ivRodriguezCA/IRCrypto.svg?branch=master)](https://travis-ci.org/ivRodriguezCA/IRCrypto)
+
 # IRCrypto - iOS Crypto library
 
 #### **Warning: I'm not a cryptographer, this library has not been reviewed by a crypto expert (and may never happen), use at your own risk**
-## Why?
-On any crypto course the first thing you **always** learn is: **DO NOT IMPLEMENT YOUR OWN CRYPTO**, although I'm trying my best to use crypto correctly and using all best practices, there are probably issues within this library. Why am I creating this library then? Short answer: I want to learn. Although this library **is not intended to be used in real world applications** (*maybe in the future?*), I learned a lot implementing it, insted of just understanding the theory behind these cryptographic concepts, I also wanted to experiment with them with real code. That being said, if you find any issues please let me know, I'll fix them and we can all learn from it.
 
 ## Overview
 #### IRCrypto aims to provide the following:
@@ -290,7 +290,7 @@ Again, this is a learning experiment, if you find issues or want to add more fea
 
 ### Todos
 
- - Receive all the hate from the Internet for creating this library in the first place
+ - Receive all the hate from the crypto experts for creating this library in the first place
  - Get some crypto experts to look at this code
  - Iterate on the first 2 points ;)
  - Error handling
@@ -301,6 +301,9 @@ Again, this is a learning experiment, if you find issues or want to add more fea
  - Finish the export public key functionality
  - Add a CHANGELOG file
  - Implement Public Key Encryption with Authenticated Encryption
+
+## Why?
+On any crypto course the first thing you **always** learn is: **DO NOT IMPLEMENT YOUR OWN CRYPTO**, although I'm trying my best to use crypto correctly and using all best practices, there are probably issues within this library. Why am I creating this library then? Short answer: I want to learn. Although this library **is not intended to be used in real world applications** (*maybe in the future?*), I learned a lot implementing it, insted of just understanding the theory behind these cryptographic concepts, I also wanted to experiment with them with real code. That being said, if you find any issues please let me know, I'll fix them and we can all learn from it.
 
 License
 ----
