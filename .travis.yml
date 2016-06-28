@@ -1,6 +1,3 @@
 language: objective-c
 script:
-- xcodebuild -project IRCrypto.xcodeproj -scheme IRCrypto -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 6,OS=9.3' build test
-
-
-
+- xcodebuild -project IRCrypto.xcodeproj -scheme IRCrypto -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 6,OS=9.3' build test -verbose
