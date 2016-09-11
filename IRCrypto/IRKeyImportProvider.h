@@ -22,4 +22,6 @@
 
 @interface IRKeyImportProvider : NSObject
 
+- (SecKeyRef)publicKeyReferenceFromDERCert:(NSData *)cert;
+
 @end
