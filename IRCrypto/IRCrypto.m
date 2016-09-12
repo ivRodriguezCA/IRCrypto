@@ -118,252 +118,6 @@ static size_t const kIRHMACDefaultSaltSize = 8;
     return self;
 }
 
-#pragma mark - Symmetric Encryption (AES)
-
-- (void)encryptData:(NSData *)plaintextData
-         completion:(SymmetricEncryptionCompletion)completion
-            failure:(SymmetricEncryptionFailure)failure {
-    
-    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
-                           attributeService:kAttributeServiceSymmetricKey
-                                 completion:^(id keyData) {
-                                     
-         [self encryptData:plaintextData
-                   withKey:keyData
-                completion:completion
-                   failure:failure];
-        
-    } failure:^(NSError *error) {
-        if (failure) {
-            failure(error);
-        }
-    }];
-}
-
-- (void)encryptData:(NSData *)plaintextData
-            withKey:(NSData *)keyData
-         completion:(SymmetricEncryptionCompletion)completion
-            failure:(SymmetricEncryptionFailure)failure {
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        if (keyData.length != self.symmetricEncryptionKeySize) {
-            if (failure) {
-                failure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Key Length", nil) errorCode:7005]);
-            }
-            return;
-        }
-        
-        NSData *iv = nil;
-        NSData *cipherData = [self.encryptionService encryptData:plaintextData withKey:keyData iv:&iv];
-        if (cipherData.length == 0) {
-            if (failure) {
-                failure([IRErrorProvider genericError]);
-            }
-            return;
-        }
-        
-        if (completion) {
-            completion(cipherData, iv, nil);
-        }
-    });
-}
-
-- (void)encryptData:(NSData *)plaintextData
-       withPassword:(NSString *)password
-         completion:(SymmetricEncryptionCompletion)completion
-            failure:(SymmetricEncryptionFailure)failure {
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        NSData *salt = [self.encryptionService randomBytesOfLength:self.symmetricEncryptionSaltSize];
-        NSData *keyData = [self.encryptionService keyFromString:password salt:salt keySize:self.symmetricEncryptionKeySize];
-        
-        [self encryptData:plaintextData
-                  withKey:keyData
-               completion:^(NSData *cipherData, NSData *iv, NSData *nilSalt) {
-                   if (completion) {
-                       completion(cipherData, iv, salt);
-                   }
-               } failure:failure];
-    });
-}
-
-#pragma mark - Symmetric Decryption (AES)
-
-- (void)decryptData:(NSData *)cipherData
-                 iv:(NSData *)iv
-         completion:(SymmetricDecryptionCompletion)completion
-            failure:(SymmetricDecryptionFailure)failure {
-    
-    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
-                           attributeService:kAttributeServiceSymmetricKey
-                                 completion:^(id keyData) {
-                                     
-        [self decryptData:cipherData
-                  withKey:keyData
-                       iv:iv
-               completion:completion
-                  failure:failure];
-        
-    } failure:^(NSError *error) {
-        if (failure) {
-            failure(error);
-        }
-    }];
-}
-
-- (void)decryptData:(NSData *)cipherData
-            withKey:(NSData *)keyData
-                 iv:(NSData *)iv
-         completion:(SymmetricDecryptionCompletion)completion
-            failure:(SymmetricDecryptionFailure)failure {
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        if (keyData.length == 0 || iv.length == 0) {
-            if (failure) {
-                failure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Parameters",nil) errorCode:7006]);
-            }
-            return;
-        }
-        
-        NSData *decryptedData = [self.encryptionService decryptData:cipherData withKey:keyData iv:iv];
-        if (decryptedData.length == 0) {
-            if (failure) {
-                failure([IRErrorProvider genericError]);
-            }
-            return;
-        }
-        
-        if (completion) {
-            completion(decryptedData);
-        }
-    });
-}
-
-- (void)decryptData:(NSData *)cipherData
-       withPassword:(NSString *)password
-                 iv:(NSData *)iv
-               salt:(NSData *)salt
-         completion:(SymmetricDecryptionCompletion)completion
-            failure:(SymmetricDecryptionFailure)failure {
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        if (password.length == 0 || iv.length == 0 || salt.length == 0) {
-            if (failure) {
-                failure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Parameters",nil) errorCode:7006]);
-            }
-            return;
-        }
-        
-        NSData *keyData = [self.encryptionService keyFromString:password salt:salt keySize:self.symmetricEncryptionKeySize];
-        
-        [self decryptData:cipherData
-                  withKey:keyData
-                       iv:iv
-               completion:completion
-                  failure:failure];
-    });
-}
-
-#pragma mark - Asymmetric Encryption (RSA)
-
-- (void)publicKeyEncryptData:(NSData *)plaintextData
-                  completion:(AsymmetricEncryptionCompletion)completion
-                     failure:(AsymmetricEncryptionFailure)failure {
-    
-    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
-                           attributeService:kAttributeServicePublicKey
-                                 completion:^(id publicKey) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            NSData *cipherData = [self.encryptionService encryptData:plaintextData publicKey:(__bridge SecKeyRef)publicKey];
-            if (cipherData.length == 0) {
-                if (failure) {
-                    failure([IRErrorProvider genericError]);
-                }
-                return;
-            }
-            
-            if (completion) {
-                completion(cipherData);
-            }
-        });
-        
-    } failure:^(NSError *error) {
-        if (failure) {
-            failure(error);
-        }
-    }];
-}
-
-- (void)publicKeyEncryptData:(NSData *)plaintextData
-               withPublicKey:(SecKeyRef)publicKey
-                  completion:(AsymmetricEncryptionCompletion)completion
-                     failure:(AsymmetricEncryptionFailure)failure {
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        NSData *cipherData = [self.encryptionService encryptData:plaintextData publicKey:publicKey];
-        if (cipherData.length == 0) {
-            if (failure) {
-                failure([IRErrorProvider genericError]);
-            }
-            return;
-        }
-        
-        if (completion) {
-            completion(cipherData);
-        }
-    });
-}
-
-#pragma mark - Asymmetric Decryption (RSA)
-
-- (void)privateKeyDecryptData:(NSData *)cipherData
-                   completion:(AsymmetricDecryptionCompletion)completion
-                      failure:(AsymmetricDecryptionFailure)failure {
-    
-    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
-                           attributeService:kAttributeServicePrivateKey
-                                 completion:^(id privateKey) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            NSData *decryptedData = [self.encryptionService decryptData:cipherData privateKey:(__bridge SecKeyRef)privateKey];
-            if (decryptedData.length == 0) {
-                if (failure) {
-                    failure([IRErrorProvider genericError]);
-                }
-                return;
-            }
-            
-            if (completion) {
-                completion(decryptedData);
-            }
-        });
-        
-    } failure:^(NSError *error) {
-        if (failure) {
-            failure(error);
-        }
-    }];
-}
-
-- (void)privateKeyDecryptData:(NSData *)cipherData
-               withPrivateKey:(SecKeyRef)privateKey
-                   completion:(AsymmetricDecryptionCompletion)completion
-                      failure:(AsymmetricDecryptionFailure)failure {
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        NSData *decryptedData = [self.encryptionService decryptData:cipherData privateKey:privateKey];
-        if (decryptedData.length == 0) {
-            if (failure) {
-                failure([IRErrorProvider genericError]);
-            }
-            return;
-        }
-        
-        if (completion) {
-            completion(cipherData);
-        }
-    });
-}
-
 #pragma mark - Authenticated Encryption (RNCryptor Data Format v3.0)
 #pragma mark - AE Encryption
 
@@ -750,6 +504,252 @@ static size_t const kIRHMACDefaultSaltSize = 8;
                 }
             }
             
+        }
+    });
+}
+
+#pragma mark - Symmetric Encryption (AES)
+
+- (void)encryptData:(NSData *)plaintextData
+         completion:(SymmetricEncryptionCompletion)completion
+            failure:(SymmetricEncryptionFailure)failure {
+    
+    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
+                           attributeService:kAttributeServiceSymmetricKey
+                                 completion:^(id keyData) {
+                                     
+         [self encryptData:plaintextData
+                   withKey:keyData
+                completion:completion
+                   failure:failure];
+        
+    } failure:^(NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+}
+
+- (void)encryptData:(NSData *)plaintextData
+            withKey:(NSData *)keyData
+         completion:(SymmetricEncryptionCompletion)completion
+            failure:(SymmetricEncryptionFailure)failure {
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        if (keyData.length != self.symmetricEncryptionKeySize) {
+            if (failure) {
+                failure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Key Length", nil) errorCode:7005]);
+            }
+            return;
+        }
+        
+        NSData *iv = nil;
+        NSData *cipherData = [self.encryptionService encryptData:plaintextData withKey:keyData iv:&iv];
+        if (cipherData.length == 0) {
+            if (failure) {
+                failure([IRErrorProvider genericError]);
+            }
+            return;
+        }
+        
+        if (completion) {
+            completion(cipherData, iv, nil);
+        }
+    });
+}
+
+- (void)encryptData:(NSData *)plaintextData
+       withPassword:(NSString *)password
+         completion:(SymmetricEncryptionCompletion)completion
+            failure:(SymmetricEncryptionFailure)failure {
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSData *salt = [self.encryptionService randomBytesOfLength:self.symmetricEncryptionSaltSize];
+        NSData *keyData = [self.encryptionService keyFromString:password salt:salt keySize:self.symmetricEncryptionKeySize];
+        
+        [self encryptData:plaintextData
+                  withKey:keyData
+               completion:^(NSData *cipherData, NSData *iv, NSData *nilSalt) {
+                   if (completion) {
+                       completion(cipherData, iv, salt);
+                   }
+               } failure:failure];
+    });
+}
+
+#pragma mark - Symmetric Decryption (AES)
+
+- (void)decryptData:(NSData *)cipherData
+                 iv:(NSData *)iv
+         completion:(SymmetricDecryptionCompletion)completion
+            failure:(SymmetricDecryptionFailure)failure {
+    
+    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
+                           attributeService:kAttributeServiceSymmetricKey
+                                 completion:^(id keyData) {
+                                     
+        [self decryptData:cipherData
+                  withKey:keyData
+                       iv:iv
+               completion:completion
+                  failure:failure];
+        
+    } failure:^(NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+}
+
+- (void)decryptData:(NSData *)cipherData
+            withKey:(NSData *)keyData
+                 iv:(NSData *)iv
+         completion:(SymmetricDecryptionCompletion)completion
+            failure:(SymmetricDecryptionFailure)failure {
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        if (keyData.length == 0 || iv.length == 0) {
+            if (failure) {
+                failure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Parameters",nil) errorCode:7006]);
+            }
+            return;
+        }
+        
+        NSData *decryptedData = [self.encryptionService decryptData:cipherData withKey:keyData iv:iv];
+        if (decryptedData.length == 0) {
+            if (failure) {
+                failure([IRErrorProvider genericError]);
+            }
+            return;
+        }
+        
+        if (completion) {
+            completion(decryptedData);
+        }
+    });
+}
+
+- (void)decryptData:(NSData *)cipherData
+       withPassword:(NSString *)password
+                 iv:(NSData *)iv
+               salt:(NSData *)salt
+         completion:(SymmetricDecryptionCompletion)completion
+            failure:(SymmetricDecryptionFailure)failure {
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        if (password.length == 0 || iv.length == 0 || salt.length == 0) {
+            if (failure) {
+                failure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Parameters",nil) errorCode:7006]);
+            }
+            return;
+        }
+        
+        NSData *keyData = [self.encryptionService keyFromString:password salt:salt keySize:self.symmetricEncryptionKeySize];
+        
+        [self decryptData:cipherData
+                  withKey:keyData
+                       iv:iv
+               completion:completion
+                  failure:failure];
+    });
+}
+
+#pragma mark - Asymmetric Encryption (RSA)
+
+- (void)publicKeyEncryptData:(NSData *)plaintextData
+                  completion:(AsymmetricEncryptionCompletion)completion
+                     failure:(AsymmetricEncryptionFailure)failure {
+    
+    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
+                           attributeService:kAttributeServicePublicKey
+                                 completion:^(id publicKey) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSData *cipherData = [self.encryptionService encryptData:plaintextData publicKey:(__bridge SecKeyRef)publicKey];
+            if (cipherData.length == 0) {
+                if (failure) {
+                    failure([IRErrorProvider genericError]);
+                }
+                return;
+            }
+            
+            if (completion) {
+                completion(cipherData);
+            }
+        });
+        
+    } failure:^(NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+}
+
+- (void)publicKeyEncryptData:(NSData *)plaintextData
+               withPublicKey:(SecKeyRef)publicKey
+                  completion:(AsymmetricEncryptionCompletion)completion
+                     failure:(AsymmetricEncryptionFailure)failure {
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSData *cipherData = [self.encryptionService encryptData:plaintextData publicKey:publicKey];
+        if (cipherData.length == 0) {
+            if (failure) {
+                failure([IRErrorProvider genericError]);
+            }
+            return;
+        }
+        
+        if (completion) {
+            completion(cipherData);
+        }
+    });
+}
+
+#pragma mark - Asymmetric Decryption (RSA)
+
+- (void)privateKeyDecryptData:(NSData *)cipherData
+                   completion:(AsymmetricDecryptionCompletion)completion
+                      failure:(AsymmetricDecryptionFailure)failure {
+    
+    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
+                           attributeService:kAttributeServicePrivateKey
+                                 completion:^(id privateKey) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSData *decryptedData = [self.encryptionService decryptData:cipherData privateKey:(__bridge SecKeyRef)privateKey];
+            if (decryptedData.length == 0) {
+                if (failure) {
+                    failure([IRErrorProvider genericError]);
+                }
+                return;
+            }
+            
+            if (completion) {
+                completion(decryptedData);
+            }
+        });
+        
+    } failure:^(NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+}
+
+- (void)privateKeyDecryptData:(NSData *)cipherData
+               withPrivateKey:(SecKeyRef)privateKey
+                   completion:(AsymmetricDecryptionCompletion)completion
+                      failure:(AsymmetricDecryptionFailure)failure {
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSData *decryptedData = [self.encryptionService decryptData:cipherData privateKey:privateKey];
+        if (decryptedData.length == 0) {
+            if (failure) {
+                failure([IRErrorProvider genericError]);
+            }
+            return;
+        }
+        
+        if (completion) {
+            completion(cipherData);
         }
     });
 }

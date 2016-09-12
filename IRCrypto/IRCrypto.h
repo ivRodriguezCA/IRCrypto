@@ -25,64 +25,6 @@
 
 - (_Nonnull instancetype)initWithOptions:(NSDictionary<NSString *, id> * _Nonnull)options;
 
-#pragma mark - Symmetric Encryption (AES)
-
-- (void)encryptData:(NSData * _Nonnull)plaintextData
-         completion:(SymmetricEncryptionCompletion _Nonnull)completion
-            failure:(SymmetricEncryptionFailure _Nonnull)failure;
-
-- (void)encryptData:(NSData * _Nonnull)plaintextData
-            withKey:(NSData * _Nonnull)keyData
-         completion:(SymmetricEncryptionCompletion _Nonnull)completion
-            failure:(SymmetricEncryptionFailure _Nonnull)failure;
-
-- (void)encryptData:(NSData * _Nonnull)plaintextData
-       withPassword:(NSString * _Nonnull)password
-         completion:(SymmetricEncryptionCompletion _Nonnull)completion
-            failure:(SymmetricEncryptionFailure _Nonnull)failure;
-
-#pragma mark - Symmetric Decryption (AES)
-
-- (void)decryptData:(NSData * _Nonnull)cipherData
-                 iv:(NSData * _Nonnull)iv
-         completion:(SymmetricDecryptionCompletion _Nonnull)completion
-            failure:(SymmetricDecryptionFailure _Nonnull)failure;
-
-- (void)decryptData:(NSData * _Nonnull)cipherData
-            withKey:(NSData * _Nonnull)keyData
-                 iv:(NSData * _Nonnull)iv
-         completion:(SymmetricDecryptionCompletion _Nonnull)completion
-            failure:(SymmetricDecryptionFailure _Nonnull)failure;
-
-- (void)decryptData:(NSData * _Nonnull)cipherData
-       withPassword:(NSString * _Nonnull)password
-                 iv:(NSData * _Nonnull)iv
-               salt:(NSData * _Nonnull)salt
-         completion:(SymmetricDecryptionCompletion _Nonnull)completion
-            failure:(SymmetricDecryptionFailure _Nonnull)failure;
-
-#pragma mark - Asymmetric Encryption (RSA)
-
-- (void)publicKeyEncryptData:(NSData * _Nonnull)plaintextData
-                   completion:(AsymmetricEncryptionCompletion _Nonnull)completion
-                      failure:(AsymmetricEncryptionFailure _Nonnull)failure;
-
-- (void)publicKeyEncryptData:(NSData * _Nonnull)plaintextData
-                withPublicKey:(SecKeyRef _Nonnull)publicKey
-                   completion:(AsymmetricEncryptionCompletion _Nonnull)completion
-                      failure:(AsymmetricEncryptionFailure _Nonnull)failure;
-
-#pragma mark - Asymmetric Decryption (RSA)
-
-- (void)privateKeyDecryptData:(NSData * _Nonnull)cipherData
-                   completion:(AsymmetricDecryptionCompletion _Nonnull)completion
-                      failure:(AsymmetricDecryptionFailure _Nonnull)failure;
-
-- (void)privateKeyDecryptData:(NSData * _Nonnull)cipherData
-               withPrivateKey:(SecKeyRef _Nonnull)privateKey
-                   completion:(AsymmetricDecryptionCompletion _Nonnull)completion
-                      failure:(AsymmetricDecryptionFailure _Nonnull)failure;
-
 #pragma mark - Authenticated Encryption (RNCryptor Data Format v3.0)
 #pragma mark - AE Encryption
 
@@ -128,5 +70,63 @@
                               password:(NSString * _Nonnull)password
                             completion:(AEDecryptionCompletion _Nonnull)completion
                                failure:(AEDecryptionFailure _Nonnull)failure;
+
+#pragma mark - Symmetric Encryption (AES)
+
+- (void)encryptData:(NSData * _Nonnull)plaintextData
+         completion:(SymmetricEncryptionCompletion _Nonnull)completion
+            failure:(SymmetricEncryptionFailure _Nonnull)failure;
+
+- (void)encryptData:(NSData * _Nonnull)plaintextData
+            withKey:(NSData * _Nonnull)keyData
+         completion:(SymmetricEncryptionCompletion _Nonnull)completion
+            failure:(SymmetricEncryptionFailure _Nonnull)failure;
+
+- (void)encryptData:(NSData * _Nonnull)plaintextData
+       withPassword:(NSString * _Nonnull)password
+         completion:(SymmetricEncryptionCompletion _Nonnull)completion
+            failure:(SymmetricEncryptionFailure _Nonnull)failure;
+
+#pragma mark - Symmetric Decryption (AES)
+
+- (void)decryptData:(NSData * _Nonnull)cipherData
+                 iv:(NSData * _Nonnull)iv
+         completion:(SymmetricDecryptionCompletion _Nonnull)completion
+            failure:(SymmetricDecryptionFailure _Nonnull)failure;
+
+- (void)decryptData:(NSData * _Nonnull)cipherData
+            withKey:(NSData * _Nonnull)keyData
+                 iv:(NSData * _Nonnull)iv
+         completion:(SymmetricDecryptionCompletion _Nonnull)completion
+            failure:(SymmetricDecryptionFailure _Nonnull)failure;
+
+- (void)decryptData:(NSData * _Nonnull)cipherData
+       withPassword:(NSString * _Nonnull)password
+                 iv:(NSData * _Nonnull)iv
+               salt:(NSData * _Nonnull)salt
+         completion:(SymmetricDecryptionCompletion _Nonnull)completion
+            failure:(SymmetricDecryptionFailure _Nonnull)failure;
+
+#pragma mark - Asymmetric Encryption (RSA)
+
+- (void)publicKeyEncryptData:(NSData * _Nonnull)plaintextData
+                  completion:(AsymmetricEncryptionCompletion _Nonnull)completion
+                     failure:(AsymmetricEncryptionFailure _Nonnull)failure;
+
+- (void)publicKeyEncryptData:(NSData * _Nonnull)plaintextData
+               withPublicKey:(SecKeyRef _Nonnull)publicKey
+                  completion:(AsymmetricEncryptionCompletion _Nonnull)completion
+                     failure:(AsymmetricEncryptionFailure _Nonnull)failure;
+
+#pragma mark - Asymmetric Decryption (RSA)
+
+- (void)privateKeyDecryptData:(NSData * _Nonnull)cipherData
+                   completion:(AsymmetricDecryptionCompletion _Nonnull)completion
+                      failure:(AsymmetricDecryptionFailure _Nonnull)failure;
+
+- (void)privateKeyDecryptData:(NSData * _Nonnull)cipherData
+               withPrivateKey:(SecKeyRef _Nonnull)privateKey
+                   completion:(AsymmetricDecryptionCompletion _Nonnull)completion
+                      failure:(AsymmetricDecryptionFailure _Nonnull)failure;
 
 @end
