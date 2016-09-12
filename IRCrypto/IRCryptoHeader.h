@@ -25,3 +25,4 @@ FOUNDATION_EXPORT double IRCryptoVersionNumber;
 FOUNDATION_EXPORT const unsigned char IRCryptoVersionString[];
 
 #import <IRCrypto/IRCrypto.h>
+#import <IRCrypto/IRPublicConstants.h>

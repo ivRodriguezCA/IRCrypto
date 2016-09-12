@@ -28,5 +28,5 @@ DESC
   s.platform     = :ios, "9.0"
   s.source       = { :git => "https://github.com/ivRodriguezCA/IRCrypto.git", :tag => "v#{s.version}" }
   s.source_files  = "IRCrypto/**/*.{h,m}"
-  s.public_header_files = "IRCrypto/IRCrypto.h", "IRCrypto/IRPublicConstants.h"
+  s.public_header_files = "IRCrypto/IRCryptoHeader.h", "IRCrypto/IRCrypto.h", "IRCrypto/IRPublicConstants.h"
 end
