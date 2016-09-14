@@ -22,9 +22,20 @@
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.9
+0.9.1
 
 ### Import
+
+#### Cocoapods
+```sh
+pod "IRCrypto"
+```
+Then just import the IRCrypto header
+```Objc
+#import <IRCrypto/IRCryptoHeader.h>
+```
+
+#### Framework
 - Clone the repo:
 ```sh
 $ git clone https://github.com/ivRodriguezCA/IRCrypto
