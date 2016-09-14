@@ -129,4 +129,9 @@
                    completion:(AsymmetricDecryptionCompletion _Nonnull)completion
                       failure:(AsymmetricDecryptionFailure _Nonnull)failure;
 
+#pragma mark - Key Generation
+
+- (NSData *)randomAESEncryptionKey;
+- (NSData *)randomHMACKey;
+
 @end

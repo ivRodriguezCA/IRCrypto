@@ -754,6 +754,16 @@ static size_t const kIRHMACDefaultSaltSize = 8;
     });
 }
 
+#pragma mark - Key Generation
+
+- (NSData *)randomAESEncryptionKey {
+    return [self.encryptionService generateAESEncryptionKeyOfLength:self.symmetricEncryptionKeySize];
+}
+
+- (NSData *)randomHMACKey {
+    return [self.encryptionService generateHMACKeyOfLength:self.hmacKeySize];
+}
+
 #pragma mark - Helpers
 
 - (NSDictionary<NSString *, id> *)defaultOptions {
