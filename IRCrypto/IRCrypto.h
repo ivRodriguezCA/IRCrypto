@@ -131,7 +131,7 @@
 
 #pragma mark - Key Generation
 
-- (NSData *)randomAESEncryptionKey;
-- (NSData *)randomHMACKey;
+- (NSData * _Nonnull)randomAESEncryptionKey;
+- (NSData * _Nonnull)randomHMACKey;
 
 @end

@@ -33,6 +33,7 @@ typedef void (^failure)(NSError *error);
                         attributeService:(AttributeService)attService;
 
 - (void)saveKeyProtectedWithPassword:(id)keyDataOrRef
+                 applicationPassword:(NSString *)appPasword
                     userPromptReason:(NSString *)reason
                     attributeService:(AttributeService)attService
                              failure:(failure)faillure;

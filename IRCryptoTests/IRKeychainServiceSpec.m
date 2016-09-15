@@ -47,16 +47,30 @@
     XCTAssertEqualObjects(error.userInfo[NSLocalizedDescriptionKey], @"Invalid Key");
 }
 
-- (void)testSavingAnInvalidKeyProtectedWithPassword {
+- (void)testSavingAnInvalidPasswordProtectedWithPassword {
     XCTestExpectation *failureExpectation = [self expectationWithDescription:@"Failure block"];
-    [self.subject saveKeyProtectedWithPassword:nil userPromptReason:@"my-user-reason" attributeService:kAttributeServicePublicKey failure:^(NSError *error) {
+    //Generate Random Key
+    NSData *key = [self dataOfLength:16];
+    [self.subject saveKeyProtectedWithPassword:key applicationPassword:nil userPromptReason:@"my-user-reason" attributeService:kAttributeServicePublicKey failure:^(NSError *error) {
         XCTAssertNotNil(error);
-        XCTAssertEqualObjects(error.userInfo[NSLocalizedDescriptionKey], @"Invalid Key");
+        XCTAssertEqualObjects(error.userInfo[NSLocalizedDescriptionKey], @"Invalid Application Password");
         [failureExpectation fulfill];
     }];
     
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
 }
+
+- (void)testSavingAnInvalidKeyProtectedWithPassword {
+    XCTestExpectation *failureExpectation = [self expectationWithDescription:@"Failure block"];
+    [self.subject saveKeyProtectedWithPassword:nil applicationPassword:nil userPromptReason:@"my-user-reason" attributeService:kAttributeServicePublicKey failure:^(NSError *error) {
+        XCTAssertNotNil(error);
+        XCTAssertEqualObjects(error.userInfo[NSLocalizedDescriptionKey], @"Invalid Key");
+        [failureExpectation fulfill];
+    }];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
 
 - (void)testSavingAnInvalidKeyProtectedWithPasswordAndTouchID {
     XCTestExpectation *failureExpectation = [self expectationWithDescription:@"Failure block"];
@@ -89,12 +103,7 @@
 
 - (void)testSavingAValidKeyWithTouchIDLoadingTheKeyAndDeletingTheKey {
     //Generate Random Key
-    NSUInteger AES128KeySize = 16;
-    unsigned char r_key[AES128KeySize];
-    for(NSUInteger i=0;i<sizeof(AES128KeySize);++i) {
-        r_key[i] = arc4random() % 255;
-    }
-    NSData *key = [NSData dataWithBytes:r_key length:AES128KeySize];
+    NSData *key = [self dataOfLength:16];
     
     //Save Random Key as Symmetric Key
     NSError *error = [self.subject saveKeyProtectedWithTouchID:key userPromptReason:@"my-user-reason" attributeService:kAttributeServiceSymmetricKey];
@@ -115,5 +124,15 @@
 }
 
 //TODO: Figure out how to test [LAContext] evaluateAccessControl:operation:localizedReason:reply
+
+// Helpers
+
+- (NSData *)dataOfLength:(NSUInteger)length {
+    unsigned char r_data[length];
+    for (NSUInteger i=0;i<length;++i) {
+        r_data[i] = arc4random() % 255;
+    }
+    return [NSData dataWithBytes:r_data length:length];
+}
 
 @end

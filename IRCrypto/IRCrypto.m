@@ -779,7 +779,7 @@ static size_t const kIRHMACDefaultSaltSize = 8;
              kIRHMACProtectionReasonKey:                    touchIDReason,
              kIRSymmetricEncryptionKeySizeKey:              @(kIRSymmetricEncryptionDefaultKeySize),
              kIRHMACKeySizeKey:                             @(kIRHMACDefaultKeySize)
-             };
+            };
 }
 
 - (void)setupWithOptions:(NSDictionary<NSString *, id> *)options {
@@ -791,41 +791,49 @@ static size_t const kIRHMACDefaultSaltSize = 8;
         self.hmacSaltSize = kIRHMACDefaultSaltSize;
         return;
     }
-    
+
+    NSString *appPassword = [self options:options valueForKey:kIRAppPasswordKey];
+
     NSNumber *asymmetricAlgorithm = [self options:options valueForKey:kIRAsymmetricEncryptionAlgorithmKey];
     NSNumber *asymmetricProtection = [self options:options valueForKey:kIRAsymmetricEncryptionProtectionKey];
     NSString *asymmetricProtectionReason = [self options:options valueForKey:kIRAsymmetricEncryptionProtectionReasonKey];
-    [self setupAsymmetricEncryptionAlgorithm:[asymmetricAlgorithm integerValue] forOption:[asymmetricProtection integerValue] userPromptReason:asymmetricProtectionReason];
+    [self setupAsymmetricEncryptionAlgorithm:[asymmetricAlgorithm integerValue] forOption:[asymmetricProtection integerValue] applicationPassword:appPassword userPromptReason:asymmetricProtectionReason];
     
     NSNumber *symmetricProtection = [self options:options valueForKey:kIRSymmetricEncryptionProtectionKey];
     NSString *symmetricProtectionReason = [self options:options valueForKey:kIRSymmetricEncryptionProtectionReasonKey];
-    
+    NSNumber *symmetricKeySize = [self options:options valueForKey:kIRSymmetricEncryptionKeySizeKey];
+    [self setupSymmetricEncryptionForOption:[symmetricProtection integerValue] applicationPassword:appPassword userPromptReason:symmetricProtectionReason keySize:[symmetricKeySize integerValue]];
+
     NSNumber *signingKeys = [self options:options valueForKey:kIRSigningKeysKey];
     [self setupSigningKeysForOption:[signingKeys integerValue]];
-    
-    NSNumber *symmetricKeySize = [self options:options valueForKey:kIRSymmetricEncryptionKeySizeKey];
-    [self setupSymmetricEncryptionForOption:[symmetricProtection integerValue] userPromptReason:symmetricProtectionReason keySize:[symmetricKeySize integerValue]];
+
+    NSNumber *hmacProtection = [self options:options valueForKey:kIRHMACProtectionKey];
+    NSString *hmacProtectionReason = [self options:options valueForKey:kIRHMACProtectionReasonKey];
+    NSNumber *hmacKeySize = [self options:options valueForKey:kIRHMACKeySizeKey];
+    [self setupHMACWithProtection:[hmacProtection integerValue] applicationPassword:appPassword userPromptReason:hmacProtectionReason keySize:[hmacKeySize integerValue]];
 }
 
 - (void)setupAsymmetricEncryptionAlgorithm:(kIRAsymmetricEncryptionAlgorithm)algorithm
                                  forOption:(kIRKeyProtection)option
+                       applicationPassword:(NSString *)appPassword
                           userPromptReason:(NSString *)reason {
     
     self.asymmetricAlgorithm = algorithm;
     
     if (algorithm == kIRAsymmetricEncryptionRSA) {
         [self.encryptionService generateRSAKeyPair:^(SecKeyRef publicKey, SecKeyRef privateKey) {
-            [self savePublicKey:publicKey privateKey:privateKey withOption:option userPromptReason:reason];
+            [self savePublicKey:publicKey privateKey:privateKey withOption:option applicationPassword:appPassword userPromptReason:reason];
         }];
         
     } else {
         [self.encryptionService generateECKeyPair:^(SecKeyRef publicKey, SecKeyRef privateKey) {
-            [self savePublicKey:publicKey privateKey:privateKey withOption:option userPromptReason:reason];
+            [self savePublicKey:publicKey privateKey:privateKey withOption:option applicationPassword:appPassword userPromptReason:reason];
         }];
     }
 }
 
 - (void)setupSymmetricEncryptionForOption:(kIRKeyProtection)option
+                      applicationPassword:(NSString *)appPassword
                          userPromptReason:(NSString *)reason
                                   keySize:(NSUInteger)keySize {
     
@@ -842,13 +850,15 @@ static size_t const kIRHMACDefaultSaltSize = 8;
         [self.keychainService saveKeyProtectedWithTouchID:masterKey userPromptReason:reason attributeService:kAttributeServiceSymmetricKey];
         
     } else if (isOptionEqualToValue(kIRKeyProtectionPassword, option)) {
-        [self.keychainService saveKeyProtectedWithPassword:masterKey userPromptReason:reason attributeService:kAttributeServiceSymmetricKey failure:nil];
+        NSAssert(appPassword != nil, NSLocalizedString(@"Error: Must provide an application password to protect keys on the Keychain", nil));
+        [self.keychainService saveKeyProtectedWithPassword:masterKey applicationPassword:appPassword userPromptReason:reason attributeService:kAttributeServiceSymmetricKey failure:nil];
     }
 }
 
-- (void)setupHMACForOption:(kIRKeyProtection)option
-          userPromptReason:(NSString *)reason
-                   keySize:(NSUInteger)keySize {
+- (void)setupHMACWithProtection:(kIRKeyProtection)option
+            applicationPassword:(NSString *)appPassword
+               userPromptReason:(NSString *)reason
+                        keySize:(NSUInteger)keySize {
     
     self.hmacKeySize = keySize;
     self.hmacUserPromptReason = reason;
@@ -863,7 +873,8 @@ static size_t const kIRHMACDefaultSaltSize = 8;
         [self.keychainService saveKeyProtectedWithTouchID:hamacKey userPromptReason:reason attributeService:kAttributeServiceHMACKey];
         
     } else if (isOptionEqualToValue(kIRKeyProtectionPassword, option)) {
-        [self.keychainService saveKeyProtectedWithPassword:hamacKey userPromptReason:reason attributeService:kAttributeServiceHMACKey failure:nil];
+        NSAssert(appPassword != nil, NSLocalizedString(@"Error: Must provide an application password to protect keys on the Keychain", nil));
+        [self.keychainService saveKeyProtectedWithPassword:hamacKey applicationPassword:appPassword userPromptReason:reason attributeService:kAttributeServiceHMACKey failure:nil];
     }
 }
 
@@ -885,6 +896,7 @@ static size_t const kIRHMACDefaultSaltSize = 8;
 - (void)savePublicKey:(SecKeyRef)publicKey
            privateKey:(SecKeyRef)privateKey
            withOption:(kIRKeyProtection)option
+  applicationPassword:(NSString *)appPassword
      userPromptReason:(NSString *)reason {
     
     if (isOptionEqualToValue(kIRKeyProtectionTouchID, option) &&
@@ -897,8 +909,9 @@ static size_t const kIRHMACDefaultSaltSize = 8;
         [self.keychainService saveKeyProtectedWithTouchID:(__bridge id)privateKey userPromptReason:reason attributeService:kAttributeServicePrivateKey];
         
     } else if (isOptionEqualToValue(kIRKeyProtectionPassword, option)) {
-        [self.keychainService saveKeyProtectedWithPassword:(__bridge id)publicKey userPromptReason:reason attributeService:kAttributeServicePublicKey failure:nil];
-        [self.keychainService saveKeyProtectedWithPassword:(__bridge id)privateKey userPromptReason:reason attributeService:kAttributeServicePrivateKey failure:nil];
+        NSAssert(appPassword != nil, NSLocalizedString(@"Error: Must provide an application password to protect keys on the Keychain", nil));
+        [self.keychainService saveKeyProtectedWithPassword:(__bridge id)publicKey applicationPassword:appPassword userPromptReason:reason attributeService:kAttributeServicePublicKey failure:nil];
+        [self.keychainService saveKeyProtectedWithPassword:(__bridge id)privateKey applicationPassword:appPassword userPromptReason:reason attributeService:kAttributeServicePrivateKey failure:nil];
     }
 }
 

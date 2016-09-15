@@ -59,11 +59,12 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     if (status != errSecSuccess) {
         return [IRErrorProvider errorWithMessage:[self keychainErrorFromStatus:status] errorCode:[self keychainErrorCodeFromStatus:status]];
     }
-    
+
     return nil;
 }
 
 - (void)saveKeyProtectedWithPassword:(id)keyDataOrRef
+                 applicationPassword:(NSString *)appPassword
                     userPromptReason:(NSString *)reason
                     attributeService:(AttributeService)attService
                              failure:(failure)faillure {
@@ -71,6 +72,13 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     if (!keyDataOrRef || keyDataOrRef == NULL) {
         if (faillure) {
             faillure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Key",nil) errorCode:7003]);
+        }
+        return;
+    }
+
+    if (appPassword == nil) {
+        if (faillure) {
+            faillure([IRErrorProvider errorWithMessage:NSLocalizedString(@"Invalid Application Password",nil) errorCode:7005]);
         }
         return;
     }
@@ -92,22 +100,18 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     }
     
     LAContext *context = [LAContext new];
-    [context evaluateAccessControl:secACL operation:LAAccessControlOperationCreateItem localizedReason:reason reply:^(BOOL success, NSError *error) {
-        if (success) {
-            NSDictionary *attributes = [self attributesForKeyProtection:kKeyProtectionPasswordAndTouchID keyDataOrRef:keyDataOrRef accessControl:secACL attributeService:attService context:context];
-            OSStatus status = SecItemAdd((__bridge CFDictionaryRef)attributes, nil);
-            if (status != errSecSuccess && faillure) {
-                if (error) {
-                    faillure(error);
-                } else {
-                    faillure([IRErrorProvider errorWithMessage:[self keychainErrorFromStatus:status] errorCode:[self keychainErrorCodeFromStatus:status]]);
-                }
-            }
-            
-        } else {
-            CFRelease(secACL);
-        }
-    }];
+    [context setCredential:[appPassword dataUsingEncoding:NSUTF8StringEncoding]
+                      type:LACredentialTypeApplicationPassword];
+
+    NSDictionary *attributes = [self attributesForKeyProtection:kKeyProtectionPassword
+                                                   keyDataOrRef:keyDataOrRef
+                                                  accessControl:secACL
+                                               attributeService:attService
+                                                        context:context];
+    OSStatus status = SecItemAdd((__bridge CFDictionaryRef)attributes, nil);
+    if (status != errSecSuccess && faillure) {
+        faillure([IRErrorProvider errorWithMessage:[self keychainErrorFromStatus:status] errorCode:[self keychainErrorCodeFromStatus:status]]);
+    }
 }
 
 - (void)saveKeyProtectedWithTouchIDAndPassword:(id)keyDataOrRef
@@ -152,7 +156,6 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
             }
             
         } else {
-            
             CFRelease(secACL);
         }
     }];
