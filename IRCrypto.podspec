@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "IRCrypto"
-  s.version      = "0.9.1"
+  s.version      = "0.9.2"
   s.summary      = "iOS Crypto library: Provides Symmetric and Asymmetric Encryption as well as AEAD using RNCryptor Data Format v3"
   s.description  = <<-DESC 
   IRCrypto aims to provide the following:
@@ -14,8 +14,8 @@ Data hashing (using SHA256)
 Data signing (using HMAC - SHA256 + 256 bit key)
 Symmetric Encryption (AES in CBC mode)
 Asymmetric Encryption (RSA)
-Authenticated Encryption using the Encrypt-then-MAC scheme (AES in CBC mode and HMAC) [RNCryptor Data Format v4.0]
-Public Key Encryption with Authenticated Encryption (RSA + AES in CBC mode and HMAC) [RNCryptor Data Format v4.0]
+Authenticated Encryption using the Encrypt-then-MAC scheme (AES in CBC mode and HMAC) [RNCryptor Data Format v3]
+Public Key Encryption with Authenticated Encryption (RSA + AES in CBC mode and HMAC) [RNCryptor Data Format v3]
 You can also:
 
 Save the generated keys (AES, RSA, EC) in the Keychain and protect them with TouchID and/or a user generated password

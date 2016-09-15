@@ -14,15 +14,15 @@
 - Data signing (using HMAC - SHA256 + 256 bit key)
 - Symmetric Encryption (AES in CBC mode)
 - Asymmetric Encryption (RSA)
-- Authenticated Encryption using the Encrypt-then-MAC scheme (AES in CBC mode and HMAC) [RNCryptor Data Format v4.0]
-- Public Key Encryption with Authenticated Encryption (RSA + AES in CBC mode and HMAC) [RNCryptor Data Format v4.0]
+- Authenticated Encryption using the Encrypt-then-MAC scheme (AES in CBC mode and HMAC) [RNCryptor Data Format v3]
+- Public Key Encryption with Authenticated Encryption (RSA + AES in CBC mode and HMAC) [RNCryptor Data Format v3]
 
 #### You can also:
 - Save the generated keys (AES, RSA, EC) in the Keychain and protect them with TouchID and/or a user generated password
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.9.1
+0.9.2
 
 ### Import
 
