@@ -22,7 +22,8 @@
 
 @implementation IRPublicConstants
 
-//Option Keys
+#pragma mark - Option Keys
+
 NSString * const kIREncryptionOptionsKey = @"com.ivrodriguez.IREncryptionOptionsKey";
 NSString * const kIRAsymmetricEncryptionAlgorithmKey = @"com.ivrodriguez.IRAsymmetricEncryptionAlgorithmKey";
 NSString * const kIRSigningKeysKey = @"com.ivrodriguez.IRSigningKeysKey";
@@ -37,5 +38,7 @@ NSString * const kIRHMACProtectionReasonKey = @"com.ivrodriguez.IRHMACProtection
 
 NSString * const kIRSymmetricEncryptionKeySizeKey = @"com.ivrodriguez.IRSymmetricEncryptionKeySizeKey";
 NSString * const kIRHMACKeySizeKey = @"com.ivrodriguez.IRHMACKeySizeKey";
+
+NSString * const kIRAppPasswordKey = @"com.ivrodriguez.IRAppPasswordKey";
 
 @end
