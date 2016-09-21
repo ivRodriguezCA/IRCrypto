@@ -137,6 +137,16 @@ typedef void (^AsymmetricDecryptionCompletion)(NSData * _Nonnull decryptedData);
 */
 typedef void (^AsymmetricDecryptionFailure)(NSError * _Nonnull error);
 
+/*
+ Name: KeyDerivationCompletion
+ Type: Block
+ Return type: void
+ Parameters:
+ [*] NSData _Nonnull key: Derived key using PBKDF2 with 10,000 rounds
+ [*] NSData _Nonnull salt: Salt usded to derive the key
+ */
+typedef void (^KeyDerivationCompletion)(NSData * _Nonnull key, NSData * _Nullable salt);
+
 //----------------------------------------------------------------------------------
 
 #pragma mark - Option Keys

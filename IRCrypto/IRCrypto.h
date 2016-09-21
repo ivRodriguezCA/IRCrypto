@@ -28,10 +28,29 @@
 #pragma mark - Authenticated Encryption (RNCryptor Data Format v3.0)
 #pragma mark - AE Encryption
 
+/**
+ Tries to encrypt data using AEAD (AES in CBC mode with HMAC for integrity). The ciphertext
+ returned in the completion block uses the RNCryptor Data Format v3.
+
+ @param plaintextData Plaintext data to encrypt. Cannot be nil.
+ @param completion    When encryption succeeds this completion block is executed. See IRPublicConstants.h
+ @param failure       When encryption fails this failure block is executed. See IRPublicConstants.h
+*/
 - (void)aeEncryptData:(NSData * _Nonnull)plaintextData
            completion:(AEEncryptionCompletion _Nonnull)completion
               failure:(AEEncryptionFailure _Nonnull)failure;
 
+
+/**
+ Tries to encrypt data using AEAD (AES in CBC mode with HMAC for integrity)
+ with custom AES and HMAC Keys
+
+ @param plaintextData Plaintext data to encrypt. Cannot be nil.
+ @param symmetricKey  AES encryption key (128, 256, 512 bits)
+ @param hmacKey       HMAC key (128, 256 bits)
+ @param completion    When encryption succeeds this completion block is executed. See IRPublicConstants.h
+ @param failure       When encryption fails this failure block is executed. See IRPublicConstants.h
+ */
 - (void)aeEncryptData:(NSData * _Nonnull)plaintextData
          symmetricKey:(NSData * _Nonnull)symmetricKey
               hmacKey:(NSData * _Nonnull)hmacKey
@@ -131,7 +150,10 @@
 
 #pragma mark - Key Generation
 
-- (NSData * _Nonnull)randomAESEncryptionKey;
-- (NSData * _Nonnull)randomHMACKey;
+- (NSData * _Nonnull)randomAESEncryptionKeyOfLength:(NSUInteger)length;
+- (NSData * _Nonnull)randomHMACKeyOfLength:(NSUInteger)length;
+- (void)keyFromPassword:(NSString * _Nonnull)password
+               ofLength:(NSUInteger)length
+             completion:(KeyDerivationCompletion _Nonnull)completion;
 
 @end

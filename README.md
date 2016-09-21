@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ivRodriguezCA/IRCrypto.svg?branch=master)](https://travis-ci.org/ivRodriguezCA/IRCrypto)
+[![CocoaPods](https://img.shields.io/cocoapods/v/IRCrypto.svg?maxAge=2592000)]()
 
 # IRCrypto - iOS Crypto library
 
@@ -22,7 +23,7 @@
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.9.2
+0.9.3
 
 ### Import
 
@@ -44,11 +45,18 @@ $ git clone https://github.com/ivRodriguezCA/IRCrypto
 - Select the `Build Framework` scheme and build the project (`⌘ + b`), this is going to generate a `IRCrypto.framework` framework in your desktop directory.
 
 ### Usage
-Create an instance of `IRCrypto` and configure it with options (read more about the options on the [`IRPublicConstants` header][IRPublicConstants-header]). When you use the default options IRCrypto is going to generate a RSA key pair (2048 bits) an AES key (256 bits) and a signing RSA key pair (the private key will never leave the secure enclave) and a HMAC key (256 bits). All these keys are going to be saved in the Keychain using the TouchID protection.
+Create an instance of `IRCrypto` and configure it with options (read more about the options on the [`IRPublicConstants` header][IRPublicConstants-header]). When you use the default options IRCrypto is going to generate a RSA key pair (2048 bits) an AES key (256 bits) and a signing RSA key pair (the private key will never leave the secure enclave) and a HMAC key (256 bits). All these keys are going to be saved in the Keychain using the TouchID protection. (**Note: if the device doesn't support TouchID an `Application Password` is required to protect these keys. Use the `kIRAppPasswordKey` option key when creating your IRCrypto instance.**)
 - For the default uptions:
 ```Objc
 - (void)someMethod {
 	IRCrypto *crypto = [IRCrypto new];
+}
+```
+- When the device doesn't support TouchID:
+```Objc
+- (void)someMethod {
+  NSDictionary *options = @{kIRAppPasswordKey: @"my-secret-password"};
+  IRCrypto *crypto = [[IRCrypto alloc] initWithOptions:options];
 }
 ```
 - For using IRCrypto just to encrypt/decrypt using your own Keys (or secret password):

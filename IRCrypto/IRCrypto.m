@@ -756,12 +756,22 @@ static size_t const kIRHMACDefaultSaltSize = 8;
 
 #pragma mark - Key Generation
 
-- (NSData *)randomAESEncryptionKey {
-    return [self.encryptionService generateAESEncryptionKeyOfLength:self.symmetricEncryptionKeySize];
+- (NSData *)randomAESEncryptionKeyOfLength:(NSUInteger)length {
+    return [self.encryptionService generateAESEncryptionKeyOfLength:length];
 }
 
-- (NSData *)randomHMACKey {
-    return [self.encryptionService generateHMACKeyOfLength:self.hmacKeySize];
+- (NSData *)randomHMACKeyOfLength:(NSUInteger)length {
+    return [self.encryptionService generateHMACKeyOfLength:length];
+}
+
+- (void)keyFromPassword:(NSString * _Nonnull)password
+               ofLength:(NSUInteger)length
+             completion:(KeyDerivationCompletion _Nonnull)completion {
+    if (completion) {
+        NSData *salt = [self.encryptionService randomBytesOfLength:length];
+        NSData *key = [self.encryptionService keyFromString:password salt:salt keySize:length];
+        completion(key, salt);
+    }
 }
 
 #pragma mark - Helpers
