@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/ivRodriguezCA/IRCrypto.svg?branch=master)](https://travis-ci.org/ivRodriguezCA/IRCrypto)
-[![CocoaPods](https://img.shields.io/cocoapods/v/IRCrypto.svg?maxAge=2592000)]()
+[![CocoaPods](https://img.shields.io/cocoapods/v/IRCrypto.svg?maxAge=2592000)](https://cocoapods.org/pods/IRCrypto)
 
 # IRCrypto - iOS Crypto library
 
@@ -23,7 +23,7 @@
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.9.3
+0.9.4
 
 ### Import
 
@@ -54,8 +54,20 @@ Create an instance of `IRCrypto` and configure it with options (read more about 
 ```
 - When the device doesn't support TouchID:
 ```Objc
+- (BOOL)supportsTouchID {
+    LAContext *context = [LAContext new];
+    NSError *error = nil;
+
+    return [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error];
+}
 - (void)someMethod {
-  NSDictionary *options = @{kIRAppPasswordKey: @"my-secret-password"};
+  kIRKeyProtection protection = [self supportsTouchID] ? kIRKeyProtectionTouchID : kIRKeyProtectionPassword;
+  NSDictionary *options = @{
+                              kIRAsymmetricEncryptionProtectionKey:@(protection),
+                              kIRSymmetricEncryptionProtectionKey:@(protection),
+                              kIRHMACProtectionKey:@(protection),
+                              kIRAppPasswordKey: @"my-secret-password"
+                            };
   IRCrypto *crypto = [[IRCrypto alloc] initWithOptions:options];
 }
 ```

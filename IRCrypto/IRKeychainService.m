@@ -227,6 +227,8 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
             return NSLocalizedString(@"Key not found",nil);
         case errSecAuthFailed:
             return NSLocalizedString(@"Authentication failed",nil);
+        case errSecParam:
+            return NSLocalizedString(@"One or more parameters are not valid", nil);
     }
     
     return NSLocalizedString(@"Unknown Error",nil);
@@ -274,13 +276,17 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
                                accessControl:(SecAccessControlRef)secACL
                             attributeService:(AttributeService)attService
                                      context:(LAContext *)context {
-    
+
     NSString *attributeService = [self attServiceFromService:attService];
+    CFStringRef keyClass = [self keyClassFromService:attService];
+
     NSMutableDictionary *attributes = [@{
-                                        (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+                                        (__bridge id)kSecClass: (__bridge id)kSecClassKey,
                                         (__bridge id)kSecAttrService: attributeService,
                                         (__bridge id)kSecUseAuthenticationUI: @NO,
-                                        (__bridge id)kSecAttrAccessControl: (__bridge_transfer id)secACL
+                                        (__bridge id)kSecAttrAccessControl: (__bridge_transfer id)secACL,
+                                        (__bridge id)kSecAttrSynchronizable: @NO,
+                                        (__bridge id)kSecAttrKeyClass: (__bridge id)keyClass
                                         } mutableCopy];
     
     if ([keyDataOrRef isKindOfClass:[NSData class]]) {
@@ -314,6 +320,22 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     }
     
     return kKeychainServiceDefault;
+}
+
+- (CFStringRef)keyClassFromService:(AttributeService)service {
+    switch (service) {
+        case kAttributeServiceSymmetricKey:
+        case kAttributeServiceHMACKey:
+            return kSecAttrKeyClassSymmetric;
+
+        case kAttributeServicePublicKey:
+            return kSecAttrKeyClassPublic;
+
+        case kAttributeServicePrivateKey:
+            return kSecAttrKeyClassPrivate;
+    }
+
+    return kSecAttrKeyClassSymmetric;
 }
 
 @end

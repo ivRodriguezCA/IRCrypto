@@ -26,6 +26,7 @@
 #define isOptionEqualToValue(option, value) (((option) & (value)) == (value))
 
 static size_t const kIVSizeAES128 = 16;
+static size_t const kPBKDF2SaltSize = 16;
 static size_t const kIRSymmetricEncryptionDefaultKeySize = 32;
 static size_t const kIRHMACDefaultKeySize = 32;
 static size_t const kIRSymmetricEncryptionDefaultSaltSize = 8;
@@ -768,7 +769,7 @@ static size_t const kIRHMACDefaultSaltSize = 8;
                ofLength:(NSUInteger)length
              completion:(KeyDerivationCompletion _Nonnull)completion {
     if (completion) {
-        NSData *salt = [self.encryptionService randomBytesOfLength:length];
+        NSData *salt = [self.encryptionService randomBytesOfLength:kPBKDF2SaltSize];
         NSData *key = [self.encryptionService keyFromString:password salt:salt keySize:length];
         completion(key, salt);
     }

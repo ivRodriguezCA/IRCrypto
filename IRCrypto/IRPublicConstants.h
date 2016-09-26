@@ -145,7 +145,7 @@ typedef void (^AsymmetricDecryptionFailure)(NSError * _Nonnull error);
  [*] NSData _Nonnull key: Derived key using PBKDF2 with 10,000 rounds
  [*] NSData _Nonnull salt: Salt usded to derive the key
  */
-typedef void (^KeyDerivationCompletion)(NSData * _Nonnull key, NSData * _Nullable salt);
+typedef void (^KeyDerivationCompletion)(NSData * _Nonnull key, NSData * _Nonnull salt);
 
 //----------------------------------------------------------------------------------
 

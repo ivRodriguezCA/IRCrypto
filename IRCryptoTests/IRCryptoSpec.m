@@ -39,6 +39,177 @@
     [super tearDown];
 }
 
+#pragma mark - Authenticated Encryption (RNCryptor Data Format v3.0)
+
+- (void)testAuthenticatedEncryptionWithKey {
+    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    NSData *aesKey = [self dataOfLength:32];
+    NSData *hmacKey = [self dataOfLength:32];
+    [self.subject aeEncryptData:mySecretData
+                   symmetricKey:aesKey
+                        hmacKey:hmacKey
+                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+
+                         XCTAssertNotNil(cipherData);
+                         XCTAssertNotNil(iv);
+                         XCTAssertNil(encryptionSalt);
+                         XCTAssertNil(hmacSalt);
+                         [completionExpectation fulfill];
+
+                     } failure:^(NSError *error) {}];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testAuthenticatedEncryptionWithPassword {
+    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    NSString *password = @"my-secret-password";
+    [self.subject aeEncryptData:mySecretData
+                       password:password
+                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+
+                         XCTAssertNotNil(cipherData);
+                         XCTAssertNotNil(iv);
+                         XCTAssertNotNil(encryptionSalt);
+                         XCTAssertNotNil(hmacSalt);
+                         [completionExpectation fulfill];
+
+                     } failure:^(NSError *error) {}];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testAuthenticatedDecryptionWithKey {
+    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    NSData *aesKey = [self staticKeyOfLength:32];
+    NSData *hmacKey = [self staticKeyOfLength:32];
+    [self.subject aeEncryptData:mySecretData
+                   symmetricKey:aesKey
+                        hmacKey:hmacKey
+                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+
+                         XCTAssertNotNil(cipherData);
+                         XCTAssertNotNil(iv);
+                         XCTAssertNil(encryptionSalt);
+                         XCTAssertNil(hmacSalt);
+
+                         NSData *aesKey = [self staticKeyOfLength:32];
+                         NSData *hmacKey = [self staticKeyOfLength:32];
+                         [self.subject aeDecryptData:cipherData
+                                        symmetricKey:aesKey
+                                             hmacKey:hmacKey
+                                          completion:^(NSData *decryptedData) {
+
+                                              NSString *plaintext = [[NSString alloc] initWithData:decryptedData
+                                                                                          encoding:NSUTF8StringEncoding];
+                                              XCTAssertNotNil(decryptedData);
+                                              XCTAssertEqualObjects(plaintext, @"my-long-long-long-long-long-long-long-long-secret-string");
+                                              [completionExpectation fulfill];
+
+                                          } failure:^(NSError *error) {}];
+
+                     } failure:^(NSError *error) {}];
+
+    [self waitForExpectationsWithTimeout:10.0 handler:nil];
+}
+
+- (void)testAuthenticatedDecryptionWithPassword {
+    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    NSString *password = @"my-secret-password";
+    [self.subject aeEncryptData:mySecretData
+                       password:password
+                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+
+                         XCTAssertNotNil(cipherData);
+                         XCTAssertNotNil(iv);
+                         XCTAssertNotNil(encryptionSalt);
+                         XCTAssertNotNil(hmacSalt);
+
+                         [self.subject aeDecryptData:cipherData
+                                            password:password
+                                          completion:^(NSData *decryptedData) {
+                                              NSString *plaintext = [[NSString alloc] initWithData:decryptedData
+                                                                                          encoding:NSUTF8StringEncoding];
+                                              XCTAssertNotNil(decryptedData);
+                                              XCTAssertEqualObjects(plaintext, @"my-long-long-long-long-long-long-long-long-secret-string");
+                                              [completionExpectation fulfill];
+
+                                          } failure:^(NSError *error) {}];
+
+                     } failure:^(NSError *error) {}];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testAuthenticatedDecryptionWithKeyAttack {
+    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    NSData *aesKey = [self dataOfLength:32];
+    NSData *hmacKey = [self dataOfLength:32];
+    [self.subject aeEncryptData:mySecretData
+                   symmetricKey:aesKey
+                        hmacKey:hmacKey
+                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
+
+                         [self.subject aeDecryptData:cipherData
+                                        symmetricKey:aesKey
+                                             hmacKey:hmacKey
+                                          completion:^(NSData *decryptedData) {
+
+                                          } failure:^(NSError *error) {
+                                              //Should fail to decrypt trying to reuse the in-memory keys
+                                              XCTAssertNotNil(error);
+                                              [completionExpectation fulfill];
+                                          }];
+
+                     } failure:^(NSError *error) {}];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testCompatibilityDecryptionWithRNCryptorLibraryUsingKey {
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    NSData *aesKey = [self staticKeyOfLength:32];
+    NSData *hmacKey = [self staticKeyOfLength:32];
+    NSData *cipherData = [self readRNCryptorFile:@"RNCryptor-EncryptedDataWithKey"];
+
+    [self.subject aeDecryptData:cipherData
+                   symmetricKey:aesKey
+                        hmacKey:hmacKey
+                     completion:^(NSData *decryptedData) {
+
+                         XCTAssertNotNil(decryptedData);
+                         NSString *plaintext = [[NSString alloc] initWithData:decryptedData
+                                                                     encoding:NSUTF8StringEncoding];
+                         XCTAssertEqualObjects(plaintext, @"My secret message encrypted with Key using RNCryptor library");
+                         [completionExpectation fulfill];
+                         
+                     } failure:^(NSError *error) {}];
+    
+    [self waitForExpectationsWithTimeout:10.0 handler:nil];
+}
+
+- (void)testCompatibilityDecryptionWithRNCryptorLibraryUsingPassword {
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    NSData *cipherData = [self readRNCryptorFile:@"RNCryptor-EncryptedDataWithPassword"];
+    NSString *password = @"my-secret-password";
+    
+    [self.subject aeCompatibilityModeDecryptData:cipherData password:password completion:^(NSData *decryptedData) {
+        XCTAssertNotNil(decryptedData);
+        NSString *plaintext = [[NSString alloc] initWithData:decryptedData
+                                                    encoding:NSUTF8StringEncoding];
+        XCTAssertEqualObjects(plaintext, @"My secret message encrypted with Password using RNCryptor library");
+        [completionExpectation fulfill];
+        
+    } failure:^(NSError *error) {}];
+    
+    [self waitForExpectationsWithTimeout:10.0 handler:nil];
+}
+
 #pragma mark - Symmetric Encryption (AES)
 
 - (void)testSymmetricEncryptionWithKey {
@@ -137,175 +308,33 @@
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
 }
 
-#pragma mark - Authenticated Encryption (RNCryptor Data Format v3.0)
+#pragma mark - Key Generation
 
-- (void)testAuthenticatedEncryptionWithKey {
-    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
-    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
-    NSData *aesKey = [self dataOfLength:32];
-    NSData *hmacKey = [self dataOfLength:32];
-    [self.subject aeEncryptData:mySecretData
-                   symmetricKey:aesKey
-                        hmacKey:hmacKey
-         completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
-             
-             XCTAssertNotNil(cipherData);
-             XCTAssertNotNil(iv);
-             XCTAssertNil(encryptionSalt);
-             XCTAssertNil(hmacSalt);
-             [completionExpectation fulfill];
-             
-    } failure:^(NSError *error) {}];
-    
-    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+- (void)testRandomAESKeyGeneration {
+    NSData *key = [self.subject randomAESEncryptionKeyOfLength:32];
+    XCTAssertNotNil(key);
+    XCTAssertEqual(key.length, 32);
 }
 
-- (void)testAuthenticatedEncryptionWithPassword {
-    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
-    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+- (void)testRandomHMACKeyGeneration {
+    NSData *key = [self.subject randomHMACKeyOfLength:16];
+    XCTAssertNotNil(key);
+    XCTAssertEqual(key.length, 16);
+}
+
+- (void)testKeyFromPasswordGeneration {
     NSString *password = @"my-secret-password";
-    [self.subject aeEncryptData:mySecretData
-                       password:password
-                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
-                         
-        XCTAssertNotNil(cipherData);
-        XCTAssertNotNil(iv);
-        XCTAssertNotNil(encryptionSalt);
-        XCTAssertNotNil(hmacSalt);
-        [completionExpectation fulfill];
-        
-    } failure:^(NSError *error) {}];
-    
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+    [self.subject keyFromPassword:password
+                         ofLength:32
+                       completion:^(NSData * _Nonnull key, NSData * _Nonnull salt) {
+                           XCTAssertNotNil(key);
+                           XCTAssertNotNil(salt);
+                           XCTAssertEqual(key.length, 32);
+
+                           [completionExpectation fulfill];
+                       }];
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
-}
-
-- (void)testAuthenticatedDecryptionWithKey {
-    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
-    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
-    NSData *aesKey = [self staticKeyOfLength:32];
-    NSData *hmacKey = [self staticKeyOfLength:32];
-    [self.subject aeEncryptData:mySecretData
-                   symmetricKey:aesKey
-                        hmacKey:hmacKey
-                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
-                         
-         XCTAssertNotNil(cipherData);
-         XCTAssertNotNil(iv);
-         XCTAssertNil(encryptionSalt);
-         XCTAssertNil(hmacSalt);
-                         
-         NSData *aesKey = [self staticKeyOfLength:32];
-         NSData *hmacKey = [self staticKeyOfLength:32];
-         [self.subject aeDecryptData:cipherData
-                        symmetricKey:aesKey
-                             hmacKey:hmacKey
-                          completion:^(NSData *decryptedData) {
-                              
-              NSString *plaintext = [[NSString alloc] initWithData:decryptedData
-                                                          encoding:NSUTF8StringEncoding];
-              XCTAssertNotNil(decryptedData);
-              XCTAssertEqualObjects(plaintext, @"my-long-long-long-long-long-long-long-long-secret-string");
-              [completionExpectation fulfill];
-
-         } failure:^(NSError *error) {}];
-                         
-    } failure:^(NSError *error) {}];
-    
-    [self waitForExpectationsWithTimeout:10.0 handler:nil];
-}
-
-- (void)testAuthenticatedDecryptionWithPassword {
-    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
-    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
-    NSString *password = @"my-secret-password";
-    [self.subject aeEncryptData:mySecretData
-                       password:password
-                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
-                         
-         XCTAssertNotNil(cipherData);
-         XCTAssertNotNil(iv);
-         XCTAssertNotNil(encryptionSalt);
-         XCTAssertNotNil(hmacSalt);
-                         
-         [self.subject aeDecryptData:cipherData
-                            password:password
-                          completion:^(NSData *decryptedData) {
-             NSString *plaintext = [[NSString alloc] initWithData:decryptedData
-                                                         encoding:NSUTF8StringEncoding];
-             XCTAssertNotNil(decryptedData);
-             XCTAssertEqualObjects(plaintext, @"my-long-long-long-long-long-long-long-long-secret-string");
-             [completionExpectation fulfill];
-             
-         } failure:^(NSError *error) {}];
-                         
-    } failure:^(NSError *error) {}];
-    
-    [self waitForExpectationsWithTimeout:5.0 handler:nil];
-}
-
-- (void)testAuthenticatedDecryptionWithKeyAttack {
-    NSData *mySecretData = [@"my-long-long-long-long-long-long-long-long-secret-string" dataUsingEncoding:NSUTF8StringEncoding];
-    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
-    NSData *aesKey = [self dataOfLength:32];
-    NSData *hmacKey = [self dataOfLength:32];
-    [self.subject aeEncryptData:mySecretData
-                   symmetricKey:aesKey
-                        hmacKey:hmacKey
-                     completion:^(NSData *cipherData, NSData *iv, NSData *encryptionSalt, NSData *hmacSalt) {
-                         
-         [self.subject aeDecryptData:cipherData
-                        symmetricKey:aesKey
-                             hmacKey:hmacKey
-                          completion:^(NSData *decryptedData) {
-              
-          } failure:^(NSError *error) {
-              //Should fail to decrypt trying to reuse the in-memory keys
-              XCTAssertNotNil(error);
-              [completionExpectation fulfill];
-          }];
-                         
-    } failure:^(NSError *error) {}];
-    
-    [self waitForExpectationsWithTimeout:5.0 handler:nil];
-}
-
-- (void)testCompatibilityDecryptionWithRNCryptorLibraryUsingKey {
-    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
-    NSData *aesKey = [self staticKeyOfLength:32];
-    NSData *hmacKey = [self staticKeyOfLength:32];
-    NSData *cipherData = [self readRNCryptorFile:@"RNCryptor-EncryptedDataWithKey"];
-    
-    [self.subject aeDecryptData:cipherData
-                   symmetricKey:aesKey
-                        hmacKey:hmacKey
-                     completion:^(NSData *decryptedData) {
-                         
-         XCTAssertNotNil(decryptedData);
-         NSString *plaintext = [[NSString alloc] initWithData:decryptedData
-                                                     encoding:NSUTF8StringEncoding];
-         XCTAssertEqualObjects(plaintext, @"My secret message encrypted with Key using RNCryptor library");
-         [completionExpectation fulfill];
-                         
-    } failure:^(NSError *error) {}];
-    
-    [self waitForExpectationsWithTimeout:10.0 handler:nil];
-}
-
-- (void)testCompatibilityDecryptionWithRNCryptorLibraryUsingPassword {
-    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
-    NSData *cipherData = [self readRNCryptorFile:@"RNCryptor-EncryptedDataWithPassword"];
-    NSString *password = @"my-secret-password";
-    
-    [self.subject aeCompatibilityModeDecryptData:cipherData password:password completion:^(NSData *decryptedData) {
-        XCTAssertNotNil(decryptedData);
-        NSString *plaintext = [[NSString alloc] initWithData:decryptedData
-                                                    encoding:NSUTF8StringEncoding];
-        XCTAssertEqualObjects(plaintext, @"My secret message encrypted with Password using RNCryptor library");
-        [completionExpectation fulfill];
-        
-    } failure:^(NSError *error) {}];
-    
-    [self waitForExpectationsWithTimeout:10.0 handler:nil];
 }
 
 //Helpers

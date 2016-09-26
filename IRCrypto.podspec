@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "IRCrypto"
-  s.version      = "0.9.3"
+  s.version      = "0.9.4"
   s.summary      = "iOS Crypto library: Provides Symmetric and Asymmetric Encryption as well as AEAD using RNCryptor Data Format v3"
   s.description  = <<-DESC 
   IRCrypto aims to provide the following:
