@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/ivRodriguezCA/IRCrypto.svg?branch=master)](https://travis-ci.org/ivRodriguezCA/IRCrypto)
-[![CocoaPods](https://img.shields.io/cocoapods/v/IRCrypto.svg?maxAge=2592000)](https://cocoapods.org/pods/IRCrypto)
+[![CocoaPods](https://img.shields.io/cocoapods/v/IRCrypto.svg)](https://cocoapods.org/pods/IRCrypto)
 
 # IRCrypto - iOS Crypto library
 
@@ -23,7 +23,7 @@
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.9.4
+0.9.5
 
 ### Import
 
@@ -77,6 +77,9 @@ Create an instance of `IRCrypto` and configure it with options (read more about 
 	IRCrypto *crypto = [[IRCrypto alloc] initWithOptions:@{kIREncryptionOptionsKey:@(kEncryptionOptionsNone)}];
 }
 ```
+
+### Generating Cryptographic keys
+IRCrypto helps you generate Cryptographic keys like AES and HMAC keys.
 
 ### Encrypting and Decrypting
 Encryption should provide confidentiality and integrity, this is why we need to use schemes like [Authenticated Encryption with Associated Data (AEAD)][Authenticated-Encryption]. IRCrypto uses the [Advance Encryption Standard][Advanced-Encryption-Standard] (AES) in [Cipher Block Chaining (CBC)][Cipher-Block-Chaining] mode of operation for confidentiality and [Hash-based Message Authentication Code (HMAC)][Hash-Based-Message-Authentication-Code] for integrity. IRCrypto uses the [RNCryptor File Format v3][RNCryptor-File-Format-v3] to package a header, the ciphertext and the MAC.

@@ -24,11 +24,11 @@
 FOUNDATION_EXTERN NSString * const kErrorDomain;
 
 //KeyChainServices
-FOUNDATION_EXPORT NSString * const kKeychainServiceDefault;
-FOUNDATION_EXTERN NSString * const kKeychainServiceSymmetricKey;
-FOUNDATION_EXPORT NSString * const kKeychainServicePublicKey;
-FOUNDATION_EXPORT NSString * const kKeychainServicePrivateKey;
-FOUNDATION_EXPORT NSString * const kKeychainServiceHMACKey;
+FOUNDATION_EXPORT CFStringRef const kKeychainServiceDefault;
+FOUNDATION_EXTERN CFStringRef const kKeychainServiceSymmetricKey;
+FOUNDATION_EXPORT CFStringRef const kKeychainServicePublicKey;
+FOUNDATION_EXPORT CFStringRef const kKeychainServicePrivateKey;
+FOUNDATION_EXPORT CFStringRef const kKeychainServiceHMACKey;
 
 //EncryptionService
 FOUNDATION_EXTERN NSString * const kPrivateKeyTag;

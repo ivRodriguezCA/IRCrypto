@@ -101,7 +101,7 @@
 
 //Success Cases
 
-- (void)testSavingAValidKeyWithTouchIDLoadingTheKeyAndDeletingTheKey {
+- (void)testSavingAValidSymmetricKeyWithTouchIDLoadingTheKeyAndDeletingTheKey {
     //Generate Random Key
     NSData *key = [self dataOfLength:16];
     
@@ -123,6 +123,65 @@
     [self.subject deleteKeyWithAttributeService:kAttributeServiceSymmetricKey];
 }
 
+- (void)testSavingAValidSymmetricKeyWithPasswordAndDeletingTheKey {
+    //Generate Random Key
+    NSData *key = [self dataOfLength:16];
+    [self.subject saveKeyProtectedWithPassword:key applicationPassword:@"my-password" userPromptReason:@"my-user-reason" attributeService:kAttributeServiceSymmetricKey failure:nil];
+
+    //Load Symmetric Key
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion block"];
+    [self.subject loadKeyWithReason:@"my-user-reason" attributeService:kAttributeServiceSymmetricKey completion:^(NSData *keyData) {
+        XCTAssertNotNil(keyData);
+        XCTAssertEqualObjects(keyData, key);
+        [completionExpectation fulfill];
+    } failure:nil];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+
+    //Delete Key After test
+    [self.subject deleteKeyWithAttributeService:kAttributeServiceSymmetricKey];
+}
+
+- (void)testSavingAValidPublicKeyWithPasswordAndDeletingTheKey {
+    SecKeyRef publicKey = [self ecPublicKey];
+    [self.subject saveKeyProtectedWithPassword:(__bridge id)publicKey applicationPassword:@"my-password" userPromptReason:@"my-user-reason" attributeService:kAttributeServicePublicKey failure:nil];
+
+    //Load Public Key
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion block"];
+    [self.subject loadKeyWithReason:@"my-user-reason" attributeService:kAttributeServicePublicKey completion:^(id keyData) {
+        SecKeyRef publicKeyData = (__bridge SecKeyRef)keyData;
+        XCTAssertNotNil((__bridge id)publicKeyData);
+        XCTAssertEqualObjects((__bridge id)publicKeyData, (__bridge id)publicKey);
+        CFRelease(publicKey);
+        [completionExpectation fulfill];
+    } failure:nil];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+
+    //Delete Key After test
+    [self.subject deleteKeyWithAttributeService:kAttributeServicePublicKey];
+}
+
+- (void)testSavingAValidPrivateKeyWithPasswordAndDeletingTheKey {
+    SecKeyRef privateKey = [self ecPrivateKey];
+    [self.subject saveKeyProtectedWithPassword:(__bridge id)privateKey applicationPassword:@"my-password" userPromptReason:@"my-user-reason" attributeService:kAttributeServicePrivateKey failure:nil];
+
+    //Load Private Key
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion block"];
+    [self.subject loadKeyWithReason:@"my-user-reason" attributeService:kAttributeServicePrivateKey completion:^(id keyData) {
+        SecKeyRef privateKeyData = (__bridge SecKeyRef)keyData;
+        XCTAssertNotNil((__bridge id)privateKeyData);
+        XCTAssertEqualObjects((__bridge id)privateKeyData, (__bridge id)privateKey);
+        CFRelease(privateKey);
+        [completionExpectation fulfill];
+    } failure:nil];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+
+    //Delete Key After test
+    [self.subject deleteKeyWithAttributeService:kAttributeServicePrivateKey];
+}
+
 //TODO: Figure out how to test [LAContext] evaluateAccessControl:operation:localizedReason:reply
 
 // Helpers
@@ -133,6 +192,54 @@
         r_data[i] = arc4random() % 255;
     }
     return [NSData dataWithBytes:r_data length:length];
+}
+
+- (SecKeyRef)ecPublicKey {
+    NSDictionary *parameters = @{
+                                 (__bridge id)kSecAttrKeyType: (__bridge id)kSecAttrKeyTypeEC,
+                                 (__bridge id)kSecAttrKeySizeInBits: @256,
+                                 (__bridge id)kSecPrivateKeyAttrs: @{
+                                         (__bridge id)kSecAttrIsPermanent: @NO
+                                         },
+                                 (__bridge id)kSecPublicKeyAttrs: @{
+                                         (__bridge id)kSecAttrIsPermanent: @NO
+                                         }
+                                 };
+
+    SecKeyRef publicKey, privateKey;
+    OSStatus status = SecKeyGeneratePair((__bridge CFDictionaryRef)parameters, &publicKey, &privateKey);
+
+    if (status == errSecSuccess) {
+        CFRelease(privateKey);
+
+        return publicKey;
+    }
+
+    return NULL;
+}
+
+- (SecKeyRef)ecPrivateKey {
+    NSDictionary *parameters = @{
+                                 (__bridge id)kSecAttrKeyType: (__bridge id)kSecAttrKeyTypeEC,
+                                 (__bridge id)kSecAttrKeySizeInBits: @256,
+                                 (__bridge id)kSecPrivateKeyAttrs: @{
+                                         (__bridge id)kSecAttrIsPermanent: @NO
+                                         },
+                                 (__bridge id)kSecPublicKeyAttrs: @{
+                                         (__bridge id)kSecAttrIsPermanent: @NO
+                                         }
+                                 };
+
+    SecKeyRef publicKey, privateKey;
+    OSStatus status = SecKeyGeneratePair((__bridge CFDictionaryRef)parameters, &publicKey, &privateKey);
+
+    if (status == errSecSuccess) {
+        CFRelease(publicKey);
+
+        return privateKey;
+    }
+
+    return NULL;
 }
 
 @end

@@ -164,12 +164,18 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
 #pragma mark - Key Deletion
 
 - (NSError *)deleteKeyWithAttributeService:(AttributeService)attService {
-    NSString *attributeService = [self attServiceFromService:attService];
-    NSDictionary *query = @{
-                            (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-                            (__bridge id)kSecAttrService: attributeService
-                            };
-    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+    NSMutableDictionary *query = [NSMutableDictionary new];
+    CFStringRef attributeService = [self secAttServiceFromService:attService];
+
+    if (attService == kAttributeServicePublicKey || attService == kAttributeServicePrivateKey) {
+        [query setObject:(__bridge id)kSecClassKey forKey:(__bridge id)kSecClass];
+        [query setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrApplicationTag];
+    } else {
+        [query setObject:(__bridge id)kSecClassGenericPassword forKey:(__bridge id)kSecClass];
+        [query setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrService];
+    }
+
+    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)([query copy]));
     if (status != errSecSuccess) {
         return [IRErrorProvider errorWithMessage:[self keychainErrorFromStatus:status] errorCode:[self keychainErrorCodeFromStatus:status]];
     }
@@ -183,25 +189,31 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
          attributeService:(AttributeService)attService
                completion:(completion)completion
                   failure:(failure)faillure {
-    
-    NSString *attributeService = [self attServiceFromService:attService];
-    NSDictionary *query = @{
-                            (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-                            (__bridge id)kSecAttrService: attributeService,
-                            (__bridge id)kSecReturnData: @YES,
-                            (__bridge id)kSecReturnRef: @YES,
-                            (__bridge id)kSecUseOperationPrompt: reason
-                            };
+
+    NSMutableDictionary *query = [@{
+                                    (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue,
+                                    (__bridge id)kSecReturnRef: (__bridge id)kCFBooleanTrue,
+                                    (__bridge id)kSecUseOperationPrompt: reason
+                                  } mutableCopy];
+
+    CFStringRef attributeService = [self secAttServiceFromService:attService];
+    if (attService == kAttributeServicePublicKey || attService == kAttributeServicePrivateKey) {
+        [query setObject:(__bridge id)kSecClassKey forKey:(__bridge id)kSecClass];
+        [query setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrApplicationTag];
+    } else {
+        [query setObject:(__bridge id)kSecClassGenericPassword forKey:(__bridge id)kSecClass];
+        [query setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrService];
+    }
 
     CFTypeRef dataTypeRef = NULL;
-    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)(query), &dataTypeRef);
+    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)([query copy]), &dataTypeRef);
     if (status == errSecSuccess) {
         NSDictionary *resultDictionary = (__bridge_transfer NSDictionary *)dataTypeRef;
         if (completion) {
-            if (attService == kAttributeServiceSymmetricKey) {
-                completion(resultDictionary[@"v_Data"]);
+            if (attService == kAttributeServiceSymmetricKey || attService == kAttributeServiceHMACKey) {
+                completion(resultDictionary[(__bridge id)kSecValueData]);
             } else {
-                completion(resultDictionary[@"accc"]);
+                completion(resultDictionary[(__bridge id)kSecValueRef]);
             }
         }
         
@@ -249,21 +261,29 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
 
 - (BOOL)keyExistsWithReason:(NSString *)reason
            attributeService:(AttributeService)attService {
-    
-    NSString *attributeService = [self attServiceFromService:attService];
-    NSDictionary *query = @{
-                            (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-                            (__bridge id)kSecAttrService: attributeService,
-                            (__bridge id)kSecReturnData: @YES,
-                            (__bridge id)kSecReturnRef: @YES,
-                            (__bridge id)kSecUseOperationPrompt: reason
-                            };
-    
+
+    NSMutableDictionary *query = [@{
+                                    (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue,
+                                    (__bridge id)kSecReturnRef: (__bridge id)kCFBooleanTrue,
+                                    (__bridge id)kSecUseOperationPrompt: reason
+                                  } mutableCopy];
+
+    CFStringRef attributeService = [self secAttServiceFromService:attService];
+    if (attService == kAttributeServicePublicKey || attService == kAttributeServicePrivateKey) {
+        [query setObject:(__bridge id)kSecClassKey forKey:(__bridge id)kSecClass];
+        [query setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrApplicationTag];
+    } else {
+        [query setObject:(__bridge id)kSecClassGenericPassword forKey:(__bridge id)kSecClass];
+        [query setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrService];
+    }
+
     CFTypeRef dataTypeRef = NULL;
-    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)(query), &dataTypeRef);
+    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)([query copy]), &dataTypeRef);
     if (status == errSecSuccess) {
         NSDictionary *resultDictionary = (__bridge_transfer NSDictionary *)dataTypeRef;
-        if (resultDictionary[@"v_Data"] || resultDictionary[@"accc"]) {
+        if (resultDictionary[(__bridge id)kSecValueData] ||
+            resultDictionary[(__bridge id)kSecAttrAccessControl] ||
+            resultDictionary[(__bridge id)kSecValueRef]) {
             return YES;
         }
     }
@@ -277,18 +297,29 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
                             attributeService:(AttributeService)attService
                                      context:(LAContext *)context {
 
-    NSString *attributeService = [self attServiceFromService:attService];
-    CFStringRef keyClass = [self keyClassFromService:attService];
-
     NSMutableDictionary *attributes = [@{
-                                        (__bridge id)kSecClass: (__bridge id)kSecClassKey,
-                                        (__bridge id)kSecAttrService: attributeService,
-                                        (__bridge id)kSecUseAuthenticationUI: @NO,
+                                        (__bridge id)kSecUseAuthenticationUI: (__bridge id)kCFBooleanFalse,
                                         (__bridge id)kSecAttrAccessControl: (__bridge_transfer id)secACL,
-                                        (__bridge id)kSecAttrSynchronizable: @NO,
-                                        (__bridge id)kSecAttrKeyClass: (__bridge id)keyClass
+                                        (__bridge id)kSecAttrSynchronizable: (__bridge id)kCFBooleanFalse,
                                         } mutableCopy];
-    
+
+    CFStringRef secClass = [self secClassFromService:attService];
+    if (secClass != NULL) {
+        [attributes setObject:(__bridge id)secClass forKey:(__bridge id)kSecClass];
+    }
+
+    CFStringRef keyAttClass = [self secAttrKeyClassFromService:attService];
+    if (keyAttClass != NULL) {
+        [attributes setObject:(__bridge id)keyAttClass forKey:(__bridge id)kSecAttrKeyClass];
+    }
+
+    CFStringRef attributeService = [self secAttServiceFromService:attService];
+    if (attService == kAttributeServicePublicKey || attService == kAttributeServicePrivateKey) {
+        [attributes setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrApplicationTag];
+    } else {
+        [attributes setObject:(__bridge id)attributeService forKey:(__bridge id)kSecAttrService];
+    }
+
     if ([keyDataOrRef isKindOfClass:[NSData class]]) {
         [attributes setObject:keyDataOrRef forKey:(__bridge id)kSecValueData];
     } else {
@@ -300,33 +331,38 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
             [attributes setObject:context forKey:(__bridge id)kSecUseAuthenticationContext];
         }
     }
-    
+
+    if (attService == kAttributeServicePublicKey || attService == kAttributeServicePrivateKey) {
+        [attributes setObject:(__bridge id)kSecAttrKeyTypeEC forKey:(__bridge id)kSecAttrKeyType];
+        [attributes setObject:(__bridge id)kCFBooleanTrue forKey:(__bridge id)kSecReturnPersistentRef];
+    }
+
     return [attributes copy];
 }
 
-- (NSString *)attServiceFromService:(AttributeService)service {
+- (CFStringRef)secAttServiceFromService:(AttributeService)service {
     switch (service) {
         case kAttributeServiceSymmetricKey:
             return kKeychainServiceSymmetricKey;
-            
+
         case kAttributeServicePublicKey:
             return kKeychainServicePublicKey;
-        
+            
         case kAttributeServicePrivateKey:
             return kKeychainServicePrivateKey;
-        
+
         case kAttributeServiceHMACKey:
             return kKeychainServiceHMACKey;
     }
-    
+
     return kKeychainServiceDefault;
 }
 
-- (CFStringRef)keyClassFromService:(AttributeService)service {
+- (CFStringRef)secAttrKeyClassFromService:(AttributeService)service {
     switch (service) {
         case kAttributeServiceSymmetricKey:
         case kAttributeServiceHMACKey:
-            return kSecAttrKeyClassSymmetric;
+            return NULL;
 
         case kAttributeServicePublicKey:
             return kSecAttrKeyClassPublic;
@@ -335,7 +371,21 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
             return kSecAttrKeyClassPrivate;
     }
 
-    return kSecAttrKeyClassSymmetric;
+    return NULL;
+}
+
+- (CFStringRef)secClassFromService:(AttributeService)service {
+    switch (service) {
+        case kAttributeServiceSymmetricKey:
+        case kAttributeServiceHMACKey:
+            return kSecClassGenericPassword;
+
+        case kAttributeServicePublicKey:
+        case kAttributeServicePrivateKey:
+            return kSecClassKey;
+    }
+
+    return kSecClassGenericPassword;
 }
 
 @end

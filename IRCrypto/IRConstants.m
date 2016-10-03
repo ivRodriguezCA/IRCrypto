@@ -24,11 +24,11 @@
 NSString * const kErrorDomain = @"com.ivrodriguez.IRCrypto";
 
 //KeyChainServices
-NSString * const kKeychainServiceDefault = @"com.ivrodriguez.KeychainServiceDefault";
-NSString * const kKeychainServiceSymmetricKey = @"com.ivrodriguez.KeychainServiceSymmetricKey";
-NSString * const kKeychainServicePublicKey = @"com.ivrodriguez.KeychainServicePublicKey";
-NSString * const kKeychainServicePrivateKey = @"com.ivrodriguez.KeychainServicePrivateKey";
-NSString * const kKeychainServiceHMACKey = @"com.ivrodriguez.KeychainServiceHMACKey";
+CFStringRef const kKeychainServiceDefault = CFSTR("com.ivrodriguez.KeychainServiceDefault");
+CFStringRef const kKeychainServiceSymmetricKey = CFSTR("com.ivrodriguez.KeychainServiceSymmetricKey");
+CFStringRef const kKeychainServicePublicKey = CFSTR("com.ivrodriguez.KeychainServicePublicKey");
+CFStringRef const kKeychainServicePrivateKey = CFSTR("com.ivrodriguez.KeychainServicePrivateKey");
+CFStringRef const kKeychainServiceHMACKey = CFSTR("com.ivrodriguez.KeychainServiceHMACKey");
 
 //EncryptionService
 NSString * const kPrivateKeyTag = @"com.ivrodriguez.PrivateKeyTag";
