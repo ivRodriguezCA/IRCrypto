@@ -23,7 +23,7 @@
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.9.5
+0.9.6
 
 ### Import
 

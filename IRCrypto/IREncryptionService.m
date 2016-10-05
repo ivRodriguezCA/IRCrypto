@@ -237,9 +237,9 @@
 - (NSData *)randomBytesOfLength:(NSUInteger)length {
     NSMutableData *randomBytes = [NSMutableData dataWithLength:length];
     
-    SecRandomCopyBytes(kSecRandomDefault,
-                       length,
-                       randomBytes.mutableBytes);
+    __unused uint result = SecRandomCopyBytes(kSecRandomDefault,
+                                              length,
+                                              randomBytes.mutableBytes);
     return [randomBytes copy];
 }
 

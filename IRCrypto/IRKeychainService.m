@@ -31,6 +31,15 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     kKeyProtectionPasswordAndTouchID
 };
 
+typedef NS_ENUM(NSUInteger, AsymmetricKeyType) {
+    kAsymmetricKeyTypeUnknown,
+    kAsymmetricKeyTypeRSA,
+    kAsymmetricKeyTypeEC
+};
+
+static NSString * const kRSAKeyString = @"RSA";
+static NSString * const kECKeyString = @"EC";
+
 @implementation IRKeychainService
 
 #pragma mark - Key Storing
@@ -210,10 +219,10 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     if (status == errSecSuccess) {
         NSDictionary *resultDictionary = (__bridge_transfer NSDictionary *)dataTypeRef;
         if (completion) {
-            if (attService == kAttributeServiceSymmetricKey || attService == kAttributeServiceHMACKey) {
-                completion(resultDictionary[(__bridge id)kSecValueData]);
-            } else {
+            if (resultDictionary[(__bridge id)kSecValueRef]) {
                 completion(resultDictionary[(__bridge id)kSecValueRef]);
+            } else {
+                completion(resultDictionary[(__bridge id)kSecValueData]);
             }
         }
         
@@ -333,7 +342,17 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     }
 
     if (attService == kAttributeServicePublicKey || attService == kAttributeServicePrivateKey) {
-        [attributes setObject:(__bridge id)kSecAttrKeyTypeEC forKey:(__bridge id)kSecAttrKeyType];
+        AsymmetricKeyType keyType = [self asymmetricKeyTypeFrom:(SecKeyRef)keyDataOrRef];
+        switch (keyType) {
+            case kAsymmetricKeyTypeEC:
+                [attributes setObject:(__bridge id)kSecAttrKeyTypeEC forKey:(__bridge id)kSecAttrKeyType];
+                break;
+            case kAsymmetricKeyTypeRSA:
+            case kAsymmetricKeyTypeUnknown:
+            default:
+                [attributes setObject:(__bridge id)kSecAttrKeyTypeRSA forKey:(__bridge id)kSecAttrKeyType];
+                break;
+        }
         [attributes setObject:(__bridge id)kCFBooleanTrue forKey:(__bridge id)kSecReturnPersistentRef];
     }
 
@@ -386,6 +405,17 @@ typedef NS_ENUM(NSUInteger, KeyProtection) {
     }
 
     return kSecClassGenericPassword;
+}
+
+- (AsymmetricKeyType)asymmetricKeyTypeFrom:(SecKeyRef)keyRef {
+    NSString *desc = (__bridge id)CFCopyDescription((SecKeyRef)keyRef);
+    if ([desc containsString:kRSAKeyString]) {
+        return kAsymmetricKeyTypeRSA;
+    } else if ([desc containsString:kECKeyString]) {
+        return kAsymmetricKeyTypeEC;
+    }
+
+    return kAsymmetricKeyTypeUnknown;
 }
 
 @end
