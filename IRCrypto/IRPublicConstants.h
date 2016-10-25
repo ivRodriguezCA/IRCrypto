@@ -107,7 +107,7 @@ typedef void (^SymmetricDecryptionFailure)(NSError * _Nonnull error);
  Return type: void
  Parameters:
  [*] NSData _Nonnull cipherData: Cipher data returned from asymmetric encryption
- */
+*/
 typedef void (^AsymmetricEncryptionCompletion)(NSData * _Nonnull cipherData);
 
 /*
@@ -138,13 +138,31 @@ typedef void (^AsymmetricDecryptionCompletion)(NSData * _Nonnull decryptedData);
 typedef void (^AsymmetricDecryptionFailure)(NSError * _Nonnull error);
 
 /*
+ Name: HMACCompletion
+ Type: Block
+ Return type: void
+ Parameters:
+ [*] NSData _Nonnull hmacData: HMAC data
+*/
+typedef void (^HMACCompletion)(NSData * _Nonnull hmacData);
+
+/*
+ Name: HMACFailure
+ Type: Block
+ Return type: void
+ Parameters:
+ [*] NSError _Nonnull error: Error returned from HMAC
+*/
+typedef void (^HMACFailure)(NSError * _Nonnull error);
+
+/*
  Name: KeyDerivationCompletion
  Type: Block
  Return type: void
  Parameters:
  [*] NSData _Nonnull key: Derived key using PBKDF2 with 10,000 rounds
  [*] NSData _Nonnull salt: Salt usded to derive the key
- */
+*/
 typedef void (^KeyDerivationCompletion)(NSData * _Nonnull key, NSData * _Nonnull salt);
 
 //----------------------------------------------------------------------------------

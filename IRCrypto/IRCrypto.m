@@ -755,6 +755,60 @@ static size_t const kIRHMACDefaultSaltSize = 8;
     });
 }
 
+#pragma mark - Data Integrity (HMAC)
+
+- (void)hmacData:(NSData *)data
+      completion:(HMACCompletion)completion
+         failure:(HMACFailure)failure {
+    [self.keychainService loadKeyWithReason:self.symmetricUserPromptReason
+                           attributeService:kAttributeServiceHMACKey
+                                 completion:^(id keyData) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSData *hmacData = [self.encryptionService hmacData:data withKey:keyData];
+            if (hmacData.length == 0) {
+                if (failure) {
+                    failure([IRErrorProvider genericError]);
+                }
+            } else {
+                if (completion) {
+                    completion(hmacData);
+                }
+            }
+        });
+
+    } failure:^(NSError *error) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            if (failure) {
+                failure(error);
+            }
+        });
+    }];
+}
+
+- (void)hmacData:(NSData *)data
+         withKey:(NSData *)key
+      completion:(HMACCompletion)completion
+         failure:(HMACFailure)failure {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSData *hmacData = [self.encryptionService hmacData:data withKey:key];
+        if (hmacData.length == 0) {
+            if (failure) {
+                failure([IRErrorProvider genericError]);
+            }
+        } else {
+            if (completion) {
+                completion(hmacData);
+            }
+        }
+    });
+}
+
+#pragma mark - Hashing
+
+- (NSData *)hashData:(NSData *)dataToHash {
+    return [self.encryptionService hashData:dataToHash];
+}
+
 #pragma mark - Key Generation
 
 - (NSData *)randomAESEncryptionKeyOfLength:(NSUInteger)length {
@@ -769,9 +823,11 @@ static size_t const kIRHMACDefaultSaltSize = 8;
                ofLength:(NSUInteger)length
              completion:(KeyDerivationCompletion _Nonnull)completion {
     if (completion) {
-        NSData *salt = [self.encryptionService randomBytesOfLength:kPBKDF2SaltSize];
-        NSData *key = [self.encryptionService keyFromString:password salt:salt keySize:length];
-        completion(key, salt);
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSData *salt = [self.encryptionService randomBytesOfLength:kPBKDF2SaltSize];
+            NSData *key = [self.encryptionService keyFromString:password salt:salt keySize:length];
+            completion(key, salt);
+        });
     }
 }
 

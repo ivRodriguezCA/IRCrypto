@@ -337,6 +337,41 @@
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
 }
 
+#pragma mark - Data Integrity (HMAC)
+
+- (void)testHMACData {
+    NSUInteger dataLength = 100; // Large Data
+    NSUInteger keyLength = 16; // 128bits
+    NSUInteger signedDataLength = 32; // SHA256
+    NSData *cipherData = [self dataOfLength:dataLength];
+    NSData *key = [self dataOfLength:keyLength];
+
+    XCTestExpectation *completionExpectation = [self expectationWithDescription:@"Completion Expectation"];
+
+    [self.subject hmacData:cipherData
+                   withKey:key
+                completion:^(NSData * _Nonnull hmacData) {
+        XCTAssertNotNil(hmacData);
+        XCTAssertEqual(hmacData.length, signedDataLength);
+        [completionExpectation fulfill];
+    } failure:^(NSError * _Nonnull error) {}];
+
+    [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+
+#pragma mark - Hashing
+
+- (void)testHashingData {
+    NSUInteger dataLength = 100; // Large Data
+    NSUInteger hashLength = 32; // SHA256
+    NSData *data = [self dataOfLength:dataLength];
+    NSData *hash = [self.subject hashData:data];
+
+    XCTAssertNotNil(hash);
+    XCTAssertEqual(hash.length, hashLength);
+}
+
 //Helpers
 
 - (NSData *)dataOfLength:(NSUInteger)length {

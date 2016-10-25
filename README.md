@@ -23,7 +23,7 @@
 - Generate an asymmetric key pair (RSA) for signing data, where the private key will never be returned and just used for singning directly from the Secure Enclave
 
 ### Version
-0.9.6
+0.9.7
 
 ### Import
 
@@ -79,7 +79,38 @@ Create an instance of `IRCrypto` and configure it with options (read more about 
 ```
 
 ### Generating Cryptographic keys
-IRCrypto helps you generate Cryptographic keys like AES and HMAC keys.
+IRCrypto helps you generate cryptographically secure AES and HMAC keys as well as deriving a cryptographically secure AES key from a password.
+
+Generating a 256bit AES key:
+```Objc
+- (void)generateAESKey {
+  IRCrypto *crypto = ...
+  NSData *aesKey = [crypto randomAESEncryptionKeyOfLength:32];
+  //Encrypt using `aesKey`
+}
+```
+
+Generating a 256bit HMAC key:
+```Objc
+- (void)generateHMACKey {
+  IRCrypto *crypto = ...
+  NSData *hmacKey = [crypto randomHMACKeyOfLength:32];
+  //Use `hmacKey`
+}
+```
+
+Deriving a 256bit AES key from a password:
+```Objc
+- (void)generateAESKeyFromPassword {
+  NSString *password = ...
+  IRCrypto *crypto = [IRCrypto new];
+  [crypto keyFromPassword:password
+                 ofLength:32
+               completion:^(NSData * _Nonnull aesKey, NSData * _Nonnull salt) {
+                     // Use the aesKey
+               }];
+}
+```
 
 ### Encrypting and Decrypting
 Encryption should provide confidentiality and integrity, this is why we need to use schemes like [Authenticated Encryption with Associated Data (AEAD)][Authenticated-Encryption]. IRCrypto uses the [Advance Encryption Standard][Advanced-Encryption-Standard] (AES) in [Cipher Block Chaining (CBC)][Cipher-Block-Chaining] mode of operation for confidentiality and [Hash-based Message Authentication Code (HMAC)][Hash-Based-Message-Authentication-Code] for integrity. IRCrypto uses the [RNCryptor File Format v3][RNCryptor-File-Format-v3] to package a header, the ciphertext and the MAC.
@@ -313,6 +344,50 @@ Decrypting using a password with the `decryptData:withPassword:iv:salt:completio
 }
 ```
 
+### Hashing and Data Integrity
+IRCrypto helps you add data integrity with HMAC-SHA256 and hashing digests using SHA256.
+
+Using HMAC for data integrity:
+```Objc
+- (void)hmacData {
+  IRCrypto *crypto = ...
+  NSData *data = ...
+  [crypto hmacData:data
+        completion:^(NSData * _Nonnull hmacData) {
+          //Use HMAC data
+        }
+        failure:^(NSError * _Nonnull error) {
+          //Use error
+        }];
+}
+```
+
+Using HMAC with custom key for data integrity:
+```Objc
+- (void)hmacDataWithCustomKey {
+  IRCrypto *crypto = ...
+  NSData *hmacKey = ...
+  NSData *data = ...
+  [crypto hmacData:data
+           withKey:hmacKey
+        completion:^(NSData * _Nonnull hmacData) {
+          //Use HMAC data
+        }
+        failure:^(NSError * _Nonnull error) {
+          //Use error
+        }];
+}
+```
+
+Hash data using SHA256:
+```Objc
+- (void)hashData {
+  IRCrypto *crypto = ...
+  NSData *data = ...
+  NSData *digest = [crypto hashData:data]; //Use SHA256 digest
+}
+```
+
 ### Tests
 Tests are written in Objective-c using the XCTest Framework, select the `IRCrypto` scheme and `⌘ + u`.
 
@@ -324,9 +399,7 @@ Again, this is a learning experiment, if you find issues or want to add more fea
 
 ### Todos
 
- - Receive all the hate from the crypto experts for creating this library in the first place
  - Get some crypto experts to look at this code
- - Iterate on the first 2 points ;)
  - Error handling
  - Add RSA and EC key pair enum for key sizes (right now is 2048 for RSA and 256 for EC)
  - Incremental Symmetric Encryption
